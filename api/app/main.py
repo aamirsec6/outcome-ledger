@@ -37,6 +37,7 @@ from app.executive_reports import (
     latest_executive_report,
 )
 from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
+from app.org_profile import org_profile_payload, update_org_profile
 from app.outcome_contracts import (
     _approval_for_contract,
     active_contract_payload,
@@ -218,6 +219,31 @@ def put_outcome_win_settings(payload: OutcomeWinPayload):
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         settings = get_win_settings(db, org_id)
     return {"ok": True, **settings}
+
+
+class OrgProfilePayload(BaseModel):
+    companyName: str = ""
+    legalName: str = ""
+    tagline: str = ""
+    stage: str = ""
+    industry: str = ""
+    website: str = ""
+    headquarters: str = ""
+
+
+@app.get("/v1/settings/org-profile", dependencies=[Depends(require_api_key)])
+def get_org_profile():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return {"profile": org_profile_payload(db, org_id)}
+
+
+@app.put("/v1/settings/org-profile", dependencies=[Depends(require_api_key)])
+def put_org_profile(payload: OrgProfilePayload):
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        profile = update_org_profile(db, org_id, payload.model_dump())
+    return {"ok": True, "profile": profile}
 
 
 @app.get("/v1/settings/team-mappings", dependencies=[Depends(require_api_key)])

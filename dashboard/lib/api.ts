@@ -54,6 +54,33 @@ export async function fetchOutcomeWinSettings(): Promise<OutcomeWinSettings> {
   }
 }
 
+export type OrgProfile = {
+  companyName: string;
+  legalName?: string;
+  tagline?: string;
+  stage?: string;
+  industry?: string;
+  website?: string;
+  headquarters?: string;
+};
+
+export async function fetchOrgProfile(): Promise<OrgProfile> {
+  if (!API_URL) {
+    return { companyName: "Your organization" };
+  }
+  try {
+    const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
+      headers: outcomeLedgerHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) return { companyName: "Your organization" };
+    const data = await res.json();
+    return data.profile ?? { companyName: "Your organization" };
+  } catch {
+    return { companyName: "Your organization" };
+  }
+}
+
 export async function fetchTeamMappings(): Promise<{ pattern: string; teamId: string }[]> {
   if (!API_URL) return [];
   try {

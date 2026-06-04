@@ -7,16 +7,23 @@ import os
 from sqlalchemy.orm import Session
 
 from app.metrics import build_overview
+from app.org_profile import org_profile_payload
 from app.outcome_contracts import active_contract_payload, ensure_default_contract
 
 
 def export_cpst_csv(db: Session, org_id: str, *, lookback_days: int = 90) -> str:
     ensure_default_contract(db, org_id)
     overview = build_overview(db, org_id, lookback_days=lookback_days)
+    profile = org_profile_payload(db, org_id)
     contract = active_contract_payload(db, org_id) or {}
     approval = contract.get("approval") or {}
     buf = io.StringIO()
     writer = csv.writer(buf)
+    writer.writerow([profile.get("companyName", "Organization"), "CPST Export"])
+    if profile.get("legalName"):
+        writer.writerow(["Legal entity", profile["legalName"]])
+    if profile.get("tagline"):
+        writer.writerow(["Tagline", profile["tagline"]])
     writer.writerow(["Outcome Ledger CPST Export"])
     writer.writerow(["Metric version", overview.get("metricVersion", "1.0")])
     writer.writerow(["Outcome contract version", contract.get("version", "")])

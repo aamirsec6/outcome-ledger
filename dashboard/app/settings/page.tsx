@@ -1,15 +1,29 @@
+import { OrgProfilePanel } from "@/components/org-profile-panel";
 import { TeamMappingsPanel } from "@/components/team-mappings";
 import { WinDefinitionPanel } from "@/components/win-definition-panel";
 import { SyncAllButton } from "@/components/sync-all-button";
-import { fetchOutcomeWinSettings, fetchTeamMappings, hasLiveApi } from "@/lib/api";
+import {
+  fetchOrgProfile,
+  fetchOutcomeWinSettings,
+  fetchTeamMappings,
+  hasLiveApi,
+} from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const live = hasLiveApi();
-  const [mappings, winSettings] = live
-    ? await Promise.all([fetchTeamMappings(), fetchOutcomeWinSettings()])
-    : [[], { winType: "pr_merged_stable", stableDays: 7, summary: "", options: [] }];
+  const [mappings, winSettings, orgProfile] = live
+    ? await Promise.all([
+        fetchTeamMappings(),
+        fetchOutcomeWinSettings(),
+        fetchOrgProfile(),
+      ])
+    : [
+        [],
+        { winType: "pr_merged_stable", stableDays: 7, summary: "", options: [] },
+        { companyName: "Your organization" },
+      ];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -19,6 +33,7 @@ export default async function SettingsPage() {
           Define a win · team attribution · CPST v1.0 · scheduled sync
         </p>
       </header>
+      <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
       <SyncAllButton />
       <TeamMappingsPanel initialMappings={mappings} />

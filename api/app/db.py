@@ -30,6 +30,8 @@ def _migrate_legacy_columns() -> None:
         org_cols = {c["name"] for c in insp.get_columns("organizations")}
         if "win_definition" not in org_cols:
             stmts.append("ALTER TABLE organizations ADD COLUMN win_definition TEXT")
+        if "profile_json" not in org_cols:
+            stmts.append("ALTER TABLE organizations ADD COLUMN profile_json TEXT")
     if not stmts:
         return
     with engine.begin() as conn:

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.executive_reports import STATUS_APPROVED, get_report_for_export
 from app.metrics import build_overview
+from app.org_profile import org_profile_payload, profile_meta_lines, profile_subtitle
 from app.outcome_contracts import active_contract_payload, ensure_default_contract
 
 
@@ -28,12 +29,43 @@ def _pdf_safe(text: str) -> str:
 
 
 class _BoardPdf(FPDF):
+    org_profile: dict = {}
+    period_label: str = ""
+
     def header(self):
-        self.set_font("Helvetica", "B", 14)
-        self.cell(0, 10, "Outcome Ledger - CPST Board Pack", new_x="LMARGIN", new_y="NEXT")
+        profile = self.org_profile or {}
+        company = _pdf_safe(profile.get("companyName", "Organization"))
+        self.set_font("Helvetica", "B", 16)
+        self.cell(0, 9, company, new_x="LMARGIN", new_y="NEXT")
+
+        subtitle = profile_subtitle(profile)
+        if subtitle:
+            self.set_font("Helvetica", "", 10)
+            self.set_text_color(60, 60, 60)
+            self.cell(0, 6, _pdf_safe(subtitle), new_x="LMARGIN", new_y="NEXT")
+
+        for line in profile_meta_lines(profile, self.period_label):
+            self.set_font("Helvetica", "", 8)
+            self.set_text_color(100, 100, 100)
+            self.cell(0, 5, _pdf_safe(line), new_x="LMARGIN", new_y="NEXT")
+
+        self.set_text_color(0, 0, 0)
+        self.ln(2)
+        self.set_draw_color(180, 180, 180)
+        self.line(self.l_margin, self.get_y(), self.w - self.r_margin, self.get_y())
+        self.ln(4)
+
+        self.set_font("Helvetica", "B", 12)
+        self.cell(0, 7, "CPST Board Pack", new_x="LMARGIN", new_y="NEXT")
         self.set_font("Helvetica", "", 9)
         self.set_text_color(100, 100, 100)
-        self.cell(0, 6, "Cost per successful outcome · deterministic metrics", new_x="LMARGIN", new_y="NEXT")
+        self.cell(
+            0,
+            5,
+            "Outcome Ledger · cost per successful outcome · deterministic metrics",
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         self.set_text_color(0, 0, 0)
         self.ln(4)
 
@@ -53,6 +85,7 @@ def export_cpst_pdf(
 ) -> bytes:
     ensure_default_contract(db, org_id)
     overview = build_overview(db, org_id, lookback_days=lookback_days)
+    profile = org_profile_payload(db, org_id)
     contract = active_contract_payload(db, org_id) or {}
     report = get_report_for_export(db, org_id)
 
@@ -62,6 +95,8 @@ def export_cpst_pdf(
         )
 
     pdf = _BoardPdf()
+    pdf.org_profile = profile
+    pdf.period_label = overview.get("periodLabel", "")
     pdf.set_auto_page_break(auto=True, margin=18)
     pdf.add_page()
 

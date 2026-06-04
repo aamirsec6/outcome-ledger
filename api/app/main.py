@@ -29,6 +29,14 @@ from app.github_oauth import (
     verify_repo_access,
 )
 from app.ingest_csv import ingest_usage_csv
+from app.ingest_push import (
+    build_ingest_status,
+    push_outcome_events,
+    push_usage_events,
+    record_mcp_sync,
+    validate_batch_size,
+)
+from app.ingest_schemas import OutcomeIngestRequest, UsageIngestRequest
 from app.ingest_github import ingest_github_merged_prs
 from app.ingest_github_commits import ingest_github_default_branch_commits
 from app.outcome_contracts import WIN_TYPE_COMMIT, primary_win_type
@@ -403,6 +411,48 @@ def _require_cron_secret(
         raise HTTPException(status_code=503, detail="CRON_SECRET not configured")
     if not x_cron_secret or x_cron_secret.strip() != expected:
         raise HTTPException(status_code=401, detail="Invalid cron secret")
+
+
+@app.post("/v1/ingest/usage", dependencies=[Depends(require_tenant_auth)])
+def ingest_usage(body: UsageIngestRequest):
+    """Batch usage events from local MCP agent (idempotent on external_id)."""
+    validate_batch_size(len(body.events))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        result = push_usage_events(db, org_id=org_id, events=body.events)
+    return {"status": "success", "ok": True, "orgId": org_id, **result}
+
+
+@app.post("/v1/ingest/outcomes", dependencies=[Depends(require_tenant_auth)])
+def ingest_outcomes(body: OutcomeIngestRequest):
+    """Batch outcome events from local MCP agent."""
+    validate_batch_size(len(body.events))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        result = push_outcome_events(db, org_id=org_id, events=body.events)
+    return {"status": "success", "ok": True, "orgId": org_id, **result}
+
+
+@app.post("/v1/ingest/sync-complete", dependencies=[Depends(require_tenant_auth)])
+def ingest_sync_complete(body: dict | None = None):
+    """Record MCP agent sync run after usage + outcome pushes."""
+    payload = body or {}
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        run_id = record_mcp_sync(
+            db,
+            org_id,
+            usage_result=payload.get("usage") or {},
+            outcome_result=payload.get("outcomes") or {},
+        )
+    return {"ok": True, "orgId": org_id, "syncRunId": run_id}
+
+
+@app.get("/v1/ingest/status", dependencies=[Depends(require_tenant_auth)])
+def ingest_status():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_ingest_status(db, org_id)
 
 
 @app.post("/v1/sync", dependencies=[Depends(require_tenant_auth)])

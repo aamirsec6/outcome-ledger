@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Upload } from "lucide-react";
 import { ConnectWizard } from "@/components/connect-wizard";
+import { McpSetupPanel } from "@/components/mcp-setup-panel";
 import { GitHubConnectPanel } from "@/components/github-connect";
 import { PageHeader } from "@/components/page-header";
 import { SpendCsvUpload } from "@/components/spend-csv-upload";
@@ -58,6 +59,8 @@ export default async function IntegrationsPage({
       />
 
       <SyncAllButton />
+
+      <McpSetupPanel />
 
       <GitHubConnectPanel
         connectUrl={connectGithubUrl()}

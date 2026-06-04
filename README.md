@@ -11,6 +11,7 @@ Standalone product. Not [Authon](https://github.com/aamirsec6/agent-money) / Age
 | [`api/`](api/) | FastAPI — ingest, CPST, outcome contracts, GitHub |
 | [`landing/`](landing/) | Next.js marketing + waitlist (Railway: root `landing`) |
 | [`dashboard/`](dashboard/) | Next.js app dashboard |
+| [`mcp/`](mcp/) | Local MCP agent — fetch all sources, push to cloud |
 | [`docs/`](docs/) | PRD, moat, Railway, one-pager |
 
 ## Quick start (local)
@@ -50,8 +51,21 @@ Use a **dedicated Railway project** (not Authon). See [`docs/railway-project.md`
 
 **Settings** in the dashboard: choose **merged PR** or **default branch commit** (master/main), then run **Sync**.
 
+## Local MCP agent
+
+Fetch OpenAI, Anthropic, Cursor, Claude Code, Copilot, and GitHub on your machine:
+
+```bash
+cd mcp && pip install -e .
+outcome-ledger-mcp configure --outcome-ledger-url http://127.0.0.1:8090 --outcome-ledger-key ol_...
+outcome-ledger-mcp sync --since 30d
+```
+
+See [docs/mcp-setup.md](docs/mcp-setup.md) and [mcp/README.md](mcp/README.md).
+
 ## Docs
 
+- [MCP setup](docs/mcp-setup.md)
 - [Problem & feasibility PDF](docs/Outcome-Ledger-Problem-Feasibility.pdf) — validate the problem, CPST costing, MVP feasibility (regenerate: `python3 scripts/generate_feasibility_pdf.py`)
 - [Product one-pager](docs/value-one-pager.md)
 - [PRD](docs/prd.md)

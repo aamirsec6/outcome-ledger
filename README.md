@@ -52,6 +52,7 @@ Use a **dedicated Railway project** (not Authon). See [`docs/railway-project.md`
 
 ## Docs
 
+- [Problem & feasibility PDF](docs/Outcome-Ledger-Problem-Feasibility.pdf) — validate the problem, CPST costing, MVP feasibility (regenerate: `python3 scripts/generate_feasibility_pdf.py`)
 - [Product one-pager](docs/value-one-pager.md)
 - [PRD](docs/prd.md)
 - [Moat strategy](docs/moat.md)

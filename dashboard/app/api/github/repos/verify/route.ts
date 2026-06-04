@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const res = await fetch(`${API_URL}/v1/connect/github/repos/verify`, {
     method: "POST",
     headers: {
-      ...outcomeLedgerHeaders(),
+      ...(await outcomeLedgerHeaders()),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),

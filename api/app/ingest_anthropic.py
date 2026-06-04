@@ -9,6 +9,7 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.models import UsageEvent
+from app.org_credentials import get_anthropic_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +22,14 @@ def ingest_anthropic_costs(
     org_id: str,
     lookback_days: int = 90,
 ) -> dict:
-    api_key = (os.getenv("ANTHROPIC_ADMIN_API_KEY") or "").strip()
+    creds = get_anthropic_credentials(db, org_id)
+    api_key = (creds.get("api_key") or "").strip()
     if not api_key:
-        return {"ok": False, "error": "ANTHROPIC_ADMIN_API_KEY not set", "inserted": 0}
+        return {
+            "ok": False,
+            "error": "Anthropic not configured for this workspace",
+            "inserted": 0,
+        }
 
     if not api_key.startswith("sk-ant-admin"):
         return {

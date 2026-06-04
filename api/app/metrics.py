@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.constants import metric_version
 from app.models import Organization, OutcomeEvent, ProviderConnection, UsageEvent
+from app.request_context import get_request_org_id
 from app.outcome_contracts import (
     active_contract_payload,
     cpst_outcome_types,
@@ -24,7 +25,10 @@ from app.sync_audit import last_sync_run
 
 
 def ensure_default_org(db: Session) -> str:
-    """Single-tenant org — do not key off display name (profile save renames org)."""
+    """Resolve org for this request (tenant key context or legacy default org)."""
+    bound = get_request_org_id()
+    if bound:
+        return bound
     org = (
         db.query(Organization)
         .order_by(Organization.created_at.asc())
@@ -202,7 +206,7 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
         if src == "github":
             connected = has_github
         elif src in ("openai", "anthropic"):
-            connected = _vendor_configured(src)
+            connected = _vendor_configured(src, db, org_id)
         else:
             connected = src in usage_sources
         integrations.append(
@@ -361,7 +365,11 @@ def build_attribution_breakdown(
     }
 
 
-def _vendor_configured(vendor: str) -> bool:
+def _vendor_configured(vendor: str, db: Session | None = None, org_id: str | None = None) -> bool:
+    if db is not None and org_id:
+        from app.org_credentials import vendor_configured_for_org
+
+        return vendor_configured_for_org(db, org_id, vendor)
     if vendor == "openai":
         return bool((os.getenv("OPENAI_API_KEY") or "").strip())
     if vendor == "anthropic":

@@ -36,8 +36,31 @@ def _from_email() -> str:
     ).strip()
 
 
-def _dashboard_url() -> str:
-    return (os.getenv("DASHBOARD_URL") or "http://localhost:3001").rstrip("/")
+def _landing_url() -> str:
+    return (
+        os.getenv("LANDING_URL")
+        or os.getenv("DASHBOARD_URL")
+        or "http://localhost:3002"
+    ).rstrip("/")
+
+
+def email_config_status() -> dict:
+    key = (os.getenv("RESEND_API_KEY") or "").strip()
+    recipients = _notify_emails()
+    from_addr = _from_email()
+    welcome = (os.getenv("WAITLIST_WELCOME_EMAIL") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+    return {
+        "resendConfigured": bool(key),
+        "fromEmail": from_addr,
+        "notifyRecipients": recipients,
+        "notifyCount": len(recipients),
+        "welcomeEmailEnabled": welcome,
+        "ready": bool(key and recipients),
+    }
 
 
 def _send_resend(*, to: list[str], subject: str, html: str, text: str) -> bool:
@@ -109,7 +132,34 @@ Attribution:
 
 Cohort: {stats.get("signups")}/{stats.get("cap")} ({stats.get("spotsRemaining")} spots left)
 """
-    html = f"""<pre style="font-family:ui-monospace,monospace;font-size:13px;line-height:1.5">{text}</pre>"""
+    rows = [
+        ("Email", email),
+        ("Name", name or "—"),
+        ("Role", role or "—"),
+        ("Company", company or "—"),
+        ("Ref", ref or "—"),
+        ("UTM source", utm_source or "—"),
+        ("UTM campaign", utm_campaign or "—"),
+        (
+            "Cohort",
+            f"{stats.get('signups')}/{stats.get('cap')} ({stats.get('spotsRemaining')} left)",
+        ),
+    ]
+    row_html = "".join(
+        f'<tr><td style="padding:8px 12px;color:#71717a;border-bottom:1px solid #27272a">{k}</td>'
+        f'<td style="padding:8px 12px;color:#f4f4f5;border-bottom:1px solid #27272a">{v}</td></tr>'
+        for k, v in rows
+    )
+    sol_html = "".join(f"<li style='margin:4px 0'>{l}</li>" for l in labels)
+    if other_solution:
+        sol_html += f"<li style='margin:4px 0'><em>Other:</em> {other_solution}</li>"
+    html = f"""<!DOCTYPE html><html><body style="margin:0;background:#09090b;font-family:system-ui,sans-serif">
+<div style="max-width:560px;margin:24px auto;padding:24px;background:#18181b;border-radius:12px;border:1px solid #27272a">
+<p style="margin:0 0 16px;font-size:12px;color:#34d399;text-transform:uppercase;letter-spacing:.1em">New waitlist signup</p>
+<table style="width:100%;border-collapse:collapse;font-size:14px">{row_html}</table>
+<p style="margin:20px 0 8px;font-size:12px;color:#71717a">Solutions needed</p>
+<ul style="margin:0;padding-left:20px;color:#e4e4e7;font-size:14px">{sol_html or "<li>—</li>"}</ul>
+</div></body></html>"""
     return _send_resend(to=recipients, subject=subject, html=html, text=text)
 
 
@@ -124,7 +174,7 @@ def send_welcome_email(*, email: str, name: str | None, spots_remaining: int) ->
         return False
 
     greeting = f"Hi {name}," if name else "Hi,"
-    join_url = f"{_dashboard_url()}/join"
+    join_url = f"{_landing_url()}/join"
     text = f"""{greeting}
 
 You're on the Outcome Ledger design partner waitlist.
@@ -184,3 +234,19 @@ def handle_signup_notifications(
         name=name,
         spots_remaining=int(stats.get("spotsRemaining") or 0),
     )
+
+
+def send_test_notification() -> dict:
+    """Send a test email to WAITLIST_NOTIFY_EMAILS — verify Resend wiring."""
+    status = email_config_status()
+    if not status["resendConfigured"]:
+        return {"ok": False, "error": "RESEND_API_KEY not set"}
+    if not status["notifyRecipients"]:
+        return {"ok": False, "error": "WAITLIST_NOTIFY_EMAILS not set"}
+    ok = _send_resend(
+        to=status["notifyRecipients"],
+        subject="[Outcome Ledger] Resend test — waitlist alerts are live",
+        text="If you received this, Resend is configured correctly for Outcome Ledger waitlist notifications.",
+        html="""<p style="font-family:system-ui,sans-serif">If you received this, <strong>Resend</strong> is configured correctly for Outcome Ledger waitlist notifications.</p>""",
+    )
+    return {"ok": ok, "sentTo": status["notifyRecipients"], "from": status["fromEmail"]}

@@ -5,7 +5,15 @@ import { Sidebar } from "@/components/sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMarketing = pathname === "/join" || pathname?.startsWith("/join/");
+  const isMarketing =
+    pathname === "/join" ||
+    pathname?.startsWith("/join/") ||
+    pathname === "/onboarding" ||
+    pathname?.startsWith("/onboarding/") ||
+    pathname === "/sign-in" ||
+    pathname?.startsWith("/sign-in/") ||
+    pathname === "/sign-up" ||
+    pathname?.startsWith("/sign-up/");
 
   if (isMarketing) {
     return <>{children}</>;

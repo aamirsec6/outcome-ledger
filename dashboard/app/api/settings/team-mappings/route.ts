@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { outcomeLedgerHeaders } from "@/lib/api-headers";
+import { getTenantApiKey } from "@/lib/tenant-session";
 
 const API_URL = (process.env.OUTCOME_LEDGER_API_URL || "").replace(/\/$/, "");
-const API_KEY = process.env.OUTCOME_LEDGER_API_KEY || "";
 
 export async function PUT(request: Request) {
-  if (!API_URL || !API_KEY) {
+  const key = await getTenantApiKey();
+  if (!API_URL || !key) {
     return NextResponse.json({ ok: false, error: "API not configured" }, { status: 503 });
   }
   const body = await request.json();
@@ -12,7 +14,7 @@ export async function PUT(request: Request) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "X-Api-Key": API_KEY,
+      ...(await outcomeLedgerHeaders()),
     },
     body: JSON.stringify(body),
   });

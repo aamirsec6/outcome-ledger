@@ -14,7 +14,7 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const res = await fetch(`${API_URL}/v1/contracts/${id}/publish`, {
     method: "POST",
-    headers: outcomeLedgerHeaders({ "Content-Type": "application/json" }),
+    headers: await outcomeLedgerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
   const data = await res.json();

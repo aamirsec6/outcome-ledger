@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AppShell } from "@/components/app-shell";
 import { ThemeProvider } from "@/components/theme-provider";
+import { isClerkEnabled } from "@/lib/clerk-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +15,7 @@ const themeScript = `(function(){try{var t=localStorage.getItem('outcome-ledger-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
+  const body = (
     <html lang="en" suppressHydrationWarning data-theme="dark">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -25,4 +27,10 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  if (isClerkEnabled()) {
+    return <ClerkProvider afterSignOutUrl="/sign-in">{body}</ClerkProvider>;
+  }
+
+  return body;
 }

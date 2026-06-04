@@ -32,7 +32,7 @@ export async function fetchOutcomeWinSettings(): Promise<OutcomeWinSettings> {
   }
   try {
     const res = await fetch(`${API_URL}/v1/settings/outcome-win`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       cache: "no-store",
     });
     if (!res.ok) {
@@ -70,7 +70,7 @@ export async function fetchOrgProfile(): Promise<OrgProfile> {
   }
   try {
     const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       cache: "no-store",
     });
     if (!res.ok) return { companyName: "Your organization" };
@@ -85,7 +85,7 @@ export async function fetchTeamMappings(): Promise<{ pattern: string; teamId: st
   if (!API_URL) return [];
   try {
     const res = await fetch(`${API_URL}/v1/settings/team-mappings`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       next: { revalidate: 60 },
     });
     if (!res.ok) return [];
@@ -120,7 +120,7 @@ export async function fetchWins(): Promise<WinsResponse> {
   }
   try {
     const res = await fetch(`${API_URL}/v1/wins`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       next: { revalidate: 30 },
     });
     if (!res.ok) return { winDefinition: "", wins: [] };
@@ -149,15 +149,15 @@ export async function fetchContractMoat(): Promise<ContractMoat> {
   try {
     const [activeRes, historyRes, versionsRes] = await Promise.all([
       fetch(`${API_URL}/v1/contracts/active`, {
-        headers: outcomeLedgerHeaders(),
+        headers: await outcomeLedgerHeaders(),
         cache: "no-store",
       }),
       fetch(`${API_URL}/v1/metrics/cpst-history`, {
-        headers: outcomeLedgerHeaders(),
+        headers: await outcomeLedgerHeaders(),
         cache: "no-store",
       }),
       fetch(`${API_URL}/v1/contracts/versions`, {
-        headers: outcomeLedgerHeaders(),
+        headers: await outcomeLedgerHeaders(),
         cache: "no-store",
       }),
     ]);
@@ -188,7 +188,7 @@ export async function fetchLatestExecutiveReport(): Promise<ExecutiveReport | nu
   if (!API_URL) return null;
   try {
     const res = await fetch(`${API_URL}/v1/reports/executive/latest`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       cache: "no-store",
     });
     if (!res.ok) return null;
@@ -230,7 +230,7 @@ export async function fetchAttribution(): Promise<AttributionBreakdown | null> {
   if (!API_URL) return null;
   try {
     const res = await fetch(`${API_URL}/v1/metrics/attribution`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       next: { revalidate: 60 },
     });
     if (!res.ok) return null;
@@ -246,7 +246,7 @@ export async function fetchOverview(): Promise<Overview & { dataSource?: string 
   }
   try {
     const res = await fetch(`${API_URL}/v1/metrics/overview`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       next: { revalidate: 60 },
     });
     if (!res.ok) {

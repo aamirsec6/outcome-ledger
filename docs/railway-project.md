@@ -13,7 +13,7 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | Service | Root Directory | Public URL |
 |---------|----------------|------------|
 | `outcome-ledger` (API) | `api` | https://outcome-ledger-production.up.railway.app |
-| `outcome-ledger-landing` | `landing` | *(generate domain — marketing + waitlist)* |
+| `outcome-ledger-landing` | `landing` | https://outcome-ledger-landing-production.up.railway.app |
 | `outcome-ledger-dashboard` | `dashboard` | https://outcome-ledger-dashboard-production.up.railway.app |
 | `Postgres` | (Railway plugin) | internal |
 
@@ -25,12 +25,16 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 |----------|--------|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | `OUTCOME_LEDGER_API_KEY` | generate a long random secret |
-| `OPENAI_API_KEY` | org admin key (optional) |
-| `OPENAI_ORG_ID` | optional |
+| `OPENAI_API_KEY` | Org **Admin** API key — [`openai-setup.md`](openai-setup.md) |
+| `OPENAI_ORG_ID` | `org-...` from OpenAI org settings (recommended) |
 | `ANTHROPIC_ADMIN_API_KEY` | `sk-ant-admin...` (optional) |
 | `GITHUB_TOKEN` | PAT (optional) |
 | `GITHUB_REPOS` | `org/repo,org/repo2` |
-| `CORS_ORIGINS` | `https://outcome-ledger-dashboard-production.up.railway.app,https://YOUR-LANDING.up.railway.app` |
+| `CORS_ORIGINS` | `https://outcome-ledger-dashboard-production.up.railway.app,https://outcome-ledger-landing-production.up.railway.app` |
+| `RESEND_API_KEY` | from [resend.com](https://resend.com) — see [`resend-setup.md`](resend-setup.md) |
+| `WAITLIST_NOTIFY_EMAILS` | your inbox for waitlist alerts |
+| `WAITLIST_FROM_EMAIL` | `onboarding@resend.dev` (test) or verified domain sender |
+| `LANDING_URL` | `https://outcome-ledger-landing-production.up.railway.app` |
 
 ### Landing service (`outcome-ledger-landing`)
 

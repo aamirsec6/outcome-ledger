@@ -10,7 +10,10 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
 from app.db import get_db, init_db
-from app.security import cors_origins, is_production, require_api_key, validate_startup_config
+from app.security import cors_origins, is_production, validate_startup_config
+from app.tenant_auth import register_tenant, require_tenant_auth
+from app.onboarding import build_onboarding_status
+from app.org_credentials import connections_summary, save_connection
 from app.github_oauth import (
     _dashboard_url,
     build_authorize_url,
@@ -63,7 +66,11 @@ from app.waitlist import (
     public_waitlist_stats,
     record_page_view,
 )
-from app.waitlist_notify import handle_signup_notifications
+from app.waitlist_notify import (
+    email_config_status,
+    handle_signup_notifications,
+    send_test_notification,
+)
 from app.wins import list_wins, win_definition_for_org
 
 logging.basicConfig(level=logging.INFO)
@@ -102,6 +109,138 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class TenantRegisterPayload(BaseModel):
+    name: str
+    companyName: str | None = None
+
+
+class ClerkSyncPayload(BaseModel):
+    workspaceName: str | None = None
+    companyName: str | None = None
+
+
+class OpenAIConnectionPayload(BaseModel):
+    apiKey: str
+    openaiOrgId: str | None = None
+    projectId: str | None = None
+
+
+class AnthropicConnectionPayload(BaseModel):
+    apiKey: str
+
+
+@app.post("/v1/tenants/register")
+def tenants_register(payload: TenantRegisterPayload):
+    """Create a new workspace + tenant API key (shown once)."""
+    enabled = (os.getenv("TENANT_REGISTRATION_ENABLED") or "true").strip().lower()
+    if enabled in ("0", "false", "no"):
+        raise HTTPException(status_code=403, detail="Tenant registration disabled")
+    name = (payload.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Workspace name is required")
+    with get_db() as db:
+        return register_tenant(
+            db, name=name, company_name=payload.companyName
+        )
+
+
+@app.post("/v1/tenants/clerk-sync", dependencies=[Depends(require_tenant_auth)])
+def tenants_clerk_sync(payload: ClerkSyncPayload):
+    """Ensure Clerk identity has a workspace; optional profile hints."""
+    from app.models import Organization, OrganizationClerkLink
+
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        link = (
+            db.query(OrganizationClerkLink)
+            .filter(OrganizationClerkLink.org_id == org_id)
+            .first()
+        )
+        if payload.companyName and link:
+            org = db.query(Organization).filter(Organization.id == org_id).first()
+            if org and not org.profile_json:
+                import json
+
+                org.profile_json = json.dumps(
+                    {"companyName": payload.companyName.strip()}
+                )
+        return {
+            "ok": True,
+            "orgId": org_id,
+            "clerkUserId": link.clerk_user_id if link else None,
+            "clerkOrgId": link.clerk_org_id if link else None,
+        }
+
+
+@app.get("/v1/tenants/me", dependencies=[Depends(require_tenant_auth)])
+def tenants_me():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        from app.models import Organization, OrganizationClerkLink
+
+        org = db.query(Organization).filter(Organization.id == org_id).first()
+        link = (
+            db.query(OrganizationClerkLink)
+            .filter(OrganizationClerkLink.org_id == org_id)
+            .first()
+        )
+        profile = org_profile_payload(db, org_id)
+        return {
+            "orgId": org_id,
+            "name": org.name if org else "Workspace",
+            "profile": profile,
+            "connections": connections_summary(db, org_id),
+            "clerk": {
+                "userId": link.clerk_user_id if link else None,
+                "orgId": link.clerk_org_id if link else None,
+            },
+        }
+
+
+@app.get("/v1/onboarding/status", dependencies=[Depends(require_tenant_auth)])
+def onboarding_status():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_onboarding_status(db, org_id)
+
+
+@app.put("/v1/connections/openai", dependencies=[Depends(require_tenant_auth)])
+def connections_openai(payload: OpenAIConnectionPayload):
+    key = (payload.apiKey or "").strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="apiKey is required")
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        save_connection(
+            db,
+            org_id=org_id,
+            provider="openai",
+            access_token=key,
+            config={
+                "openai_org_id": (payload.openaiOrgId or "").strip(),
+                "project_id": (payload.projectId or "").strip(),
+            },
+        )
+    return {"ok": True, "provider": "openai"}
+
+
+@app.put("/v1/connections/anthropic", dependencies=[Depends(require_tenant_auth)])
+def connections_anthropic(payload: AnthropicConnectionPayload):
+    key = (payload.apiKey or "").strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="apiKey is required")
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        save_connection(
+            db,
+            org_id=org_id,
+            provider="anthropic",
+            access_token=key,
+            config={},
+        )
+    return {"ok": True, "provider": "anthropic"}
 
 
 @app.get("/health")
@@ -229,10 +368,26 @@ def waitlist_signup(
     return result
 
 
-@app.get("/v1/waitlist/signups", dependencies=[Depends(require_api_key)])
+@app.get("/v1/waitlist/signups", dependencies=[Depends(require_tenant_auth)])
 def waitlist_list_signups():
     with get_db() as db:
         return {"signups": list_signups(db), "stats": public_waitlist_stats(db)}
+
+
+@app.get("/v1/waitlist/email-status", dependencies=[Depends(require_tenant_auth)])
+def waitlist_email_status():
+    return email_config_status()
+
+
+@app.post("/v1/waitlist/test-email", dependencies=[Depends(require_tenant_auth)])
+def waitlist_test_email():
+    result = send_test_notification()
+    if not result.get("ok"):
+        raise HTTPException(
+            status_code=503,
+            detail=result.get("error") or "Failed to send test email",
+        )
+    return result
 
 
 def _require_cron_secret(
@@ -245,7 +400,7 @@ def _require_cron_secret(
         raise HTTPException(status_code=401, detail="Invalid cron secret")
 
 
-@app.post("/v1/sync", dependencies=[Depends(require_api_key)])
+@app.post("/v1/sync", dependencies=[Depends(require_tenant_auth)])
 def sync_all():
     """Pull vendors + GitHub, scan reverts, audit log."""
     with get_db() as db:
@@ -263,14 +418,38 @@ def cron_sync():
     return {"ok": True, "org_id": org_id, "results": results}
 
 
-@app.post("/v1/jobs/check-reverts", dependencies=[Depends(require_api_key)])
+@app.post("/v1/jobs/check-reverts", dependencies=[Depends(require_tenant_auth)])
 def job_check_reverts():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return check_reverts(db, org_id)
 
 
-@app.post("/v1/imports/usage-csv", dependencies=[Depends(require_api_key)])
+@app.get("/v1/jobs/openai-probe", dependencies=[Depends(require_tenant_auth)])
+def job_openai_probe():
+    """Check if the current OpenAI key can read billing (service account vs admin)."""
+    from app.ingest_openai import probe_openai_access
+
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return probe_openai_access(db, org_id)
+
+
+@app.post("/v1/jobs/test-openai", dependencies=[Depends(require_tenant_auth)])
+def job_test_openai():
+    """Pull OpenAI org costs — verify OPENAI_API_KEY + OPENAI_PROJECT_ID."""
+    from app.ingest_openai import ingest_openai_costs
+
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        result = ingest_openai_costs(db, org_id=org_id, lookback_days=lookback)
+    if not result.get("ok") and result.get("probe"):
+        result["hint"] = "See GET /v1/jobs/openai-probe or docs/openai-setup.md"
+    return result
+
+
+@app.post("/v1/imports/usage-csv", dependencies=[Depends(require_tenant_auth)])
 async def import_usage_csv(
     file: UploadFile = File(...),
     source: str = "csv",
@@ -284,7 +463,7 @@ async def import_usage_csv(
     return result
 
 
-@app.get("/v1/metrics/overview", dependencies=[Depends(require_api_key)])
+@app.get("/v1/metrics/overview", dependencies=[Depends(require_tenant_auth)])
 def metrics_overview():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:
@@ -294,7 +473,7 @@ def metrics_overview():
         return overview
 
 
-@app.get("/v1/wins", dependencies=[Depends(require_api_key)])
+@app.get("/v1/wins", dependencies=[Depends(require_tenant_auth)])
 def wins_list():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:
@@ -302,7 +481,7 @@ def wins_list():
         return list_wins(db, org_id, lookback_days=lookback)
 
 
-@app.get("/v1/integrations/status", dependencies=[Depends(require_api_key)])
+@app.get("/v1/integrations/status", dependencies=[Depends(require_tenant_auth)])
 def integrations_status():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -310,21 +489,24 @@ def integrations_status():
     return {"integrations": overview["integrations"]}
 
 
-@app.get("/v1/settings/vendors", dependencies=[Depends(require_api_key)])
+@app.get("/v1/settings/vendors", dependencies=[Depends(require_tenant_auth)])
 def settings_vendors():
     from app.metrics import _vendor_configured
 
-    return {
-        "openai": {"configured": _vendor_configured("openai")},
-        "anthropic": {"configured": _vendor_configured("anthropic")},
-        "githubOAuth": bool(
-            (os.getenv("GITHUB_OAUTH_CLIENT_ID") or "").strip()
-            and (os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or "").strip()
-        ),
-    }
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return {
+            "openai": {"configured": _vendor_configured("openai", db, org_id)},
+            "anthropic": {"configured": _vendor_configured("anthropic", db, org_id)},
+            "githubOAuth": bool(
+                (os.getenv("GITHUB_OAUTH_CLIENT_ID") or "").strip()
+                and (os.getenv("GITHUB_OAUTH_CLIENT_SECRET") or "").strip()
+            ),
+            "connections": connections_summary(db, org_id),
+        }
 
 
-@app.get("/v1/settings/outcome-win", dependencies=[Depends(require_api_key)])
+@app.get("/v1/settings/outcome-win", dependencies=[Depends(require_tenant_auth)])
 def get_outcome_win_settings():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -336,7 +518,7 @@ class OutcomeWinPayload(BaseModel):
     actor: str | None = None
 
 
-@app.put("/v1/settings/outcome-win", dependencies=[Depends(require_api_key)])
+@app.put("/v1/settings/outcome-win", dependencies=[Depends(require_tenant_auth)])
 def put_outcome_win_settings(payload: OutcomeWinPayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -363,14 +545,14 @@ class OrgProfilePayload(BaseModel):
     headquarters: str = ""
 
 
-@app.get("/v1/settings/org-profile", dependencies=[Depends(require_api_key)])
+@app.get("/v1/settings/org-profile", dependencies=[Depends(require_tenant_auth)])
 def get_org_profile():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return {"profile": org_profile_payload(db, org_id)}
 
 
-@app.put("/v1/settings/org-profile", dependencies=[Depends(require_api_key)])
+@app.put("/v1/settings/org-profile", dependencies=[Depends(require_tenant_auth)])
 def put_org_profile(payload: OrgProfilePayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -378,7 +560,7 @@ def put_org_profile(payload: OrgProfilePayload):
     return {"ok": True, "profile": profile}
 
 
-@app.get("/v1/settings/team-mappings", dependencies=[Depends(require_api_key)])
+@app.get("/v1/settings/team-mappings", dependencies=[Depends(require_tenant_auth)])
 def get_team_mappings():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -389,7 +571,7 @@ class TeamMappingsPayload(BaseModel):
     mappings: list[dict]
 
 
-@app.put("/v1/settings/team-mappings", dependencies=[Depends(require_api_key)])
+@app.put("/v1/settings/team-mappings", dependencies=[Depends(require_tenant_auth)])
 def put_team_mappings(payload: TeamMappingsPayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -397,14 +579,14 @@ def put_team_mappings(payload: TeamMappingsPayload):
     return {"ok": True, "mappings": saved}
 
 
-@app.get("/v1/sync/history", dependencies=[Depends(require_api_key)])
+@app.get("/v1/sync/history", dependencies=[Depends(require_tenant_auth)])
 def get_sync_history():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return {"runs": sync_history(db, org_id)}
 
 
-@app.get("/v1/contracts/active", dependencies=[Depends(require_api_key)])
+@app.get("/v1/contracts/active", dependencies=[Depends(require_tenant_auth)])
 def contracts_active():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -413,14 +595,14 @@ def contracts_active():
     return {"contract": contract}
 
 
-@app.get("/v1/contracts/versions", dependencies=[Depends(require_api_key)])
+@app.get("/v1/contracts/versions", dependencies=[Depends(require_tenant_auth)])
 def contracts_versions():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return {"versions": list_contract_versions(db, org_id)}
 
 
-@app.get("/v1/contracts/audit", dependencies=[Depends(require_api_key)])
+@app.get("/v1/contracts/audit", dependencies=[Depends(require_tenant_auth)])
 def contracts_audit():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -433,7 +615,7 @@ class ContractDraftPayload(BaseModel):
     actor: str | None = None
 
 
-@app.post("/v1/contracts/draft", dependencies=[Depends(require_api_key)])
+@app.post("/v1/contracts/draft", dependencies=[Depends(require_tenant_auth)])
 def contracts_create_draft(payload: ContractDraftPayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -448,7 +630,7 @@ def contracts_create_draft(payload: ContractDraftPayload):
     return {"ok": True, "contract": out}
 
 
-@app.post("/v1/contracts/{contract_id}/publish", dependencies=[Depends(require_api_key)])
+@app.post("/v1/contracts/{contract_id}/publish", dependencies=[Depends(require_tenant_auth)])
 def contracts_publish(contract_id: str, payload: ContractDraftPayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -468,7 +650,7 @@ class ContractApprovePayload(BaseModel):
     actor: str | None = None
 
 
-@app.post("/v1/contracts/{contract_id}/approve", dependencies=[Depends(require_api_key)])
+@app.post("/v1/contracts/{contract_id}/approve", dependencies=[Depends(require_tenant_auth)])
 def contracts_approve(contract_id: str, payload: ContractApprovePayload):
     if not payload.signerName.strip():
         raise HTTPException(status_code=400, detail="signerName required")
@@ -491,7 +673,7 @@ def contracts_approve(contract_id: str, payload: ContractApprovePayload):
     return {"ok": True, "contract": contract}
 
 
-@app.get("/v1/metrics/cpst-history", dependencies=[Depends(require_api_key)])
+@app.get("/v1/metrics/cpst-history", dependencies=[Depends(require_tenant_auth)])
 def metrics_cpst_history():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -501,14 +683,14 @@ def metrics_cpst_history():
         }
 
 
-@app.post("/v1/jobs/record-cpst-snapshots", dependencies=[Depends(require_api_key)])
+@app.post("/v1/jobs/record-cpst-snapshots", dependencies=[Depends(require_tenant_auth)])
 def job_record_cpst_snapshots():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return record_cpst_snapshots(db, org_id)
 
 
-@app.get("/v1/reports/export.csv", dependencies=[Depends(require_api_key)])
+@app.get("/v1/reports/export.csv", dependencies=[Depends(require_tenant_auth)])
 def reports_export_csv():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:
@@ -521,7 +703,7 @@ def reports_export_csv():
     )
 
 
-@app.get("/v1/reports/export.pdf", dependencies=[Depends(require_api_key)])
+@app.get("/v1/reports/export.pdf", dependencies=[Depends(require_tenant_auth)])
 def reports_export_pdf():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:
@@ -539,7 +721,7 @@ def reports_export_pdf():
     )
 
 
-@app.get("/v1/metrics/attribution", dependencies=[Depends(require_api_key)])
+@app.get("/v1/metrics/attribution", dependencies=[Depends(require_tenant_auth)])
 def metrics_attribution():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     try:
@@ -555,7 +737,7 @@ class ExecutiveApprovePayload(BaseModel):
     signerName: str
 
 
-@app.post("/v1/reports/executive", dependencies=[Depends(require_api_key)])
+@app.post("/v1/reports/executive", dependencies=[Depends(require_tenant_auth)])
 def reports_executive_generate():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:
@@ -563,7 +745,7 @@ def reports_executive_generate():
         return create_executive_report(db, org_id, lookback_days=lookback)
 
 
-@app.get("/v1/reports/executive/latest", dependencies=[Depends(require_api_key)])
+@app.get("/v1/reports/executive/latest", dependencies=[Depends(require_tenant_auth)])
 def reports_executive_latest():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -575,7 +757,7 @@ def reports_executive_latest():
 
 @app.post(
     "/v1/reports/executive/{report_id}/approve",
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_tenant_auth)],
 )
 def reports_executive_approve(report_id: str, payload: ExecutiveApprovePayload):
     name = (payload.signerName or "").strip()
@@ -600,9 +782,24 @@ class GitHubVerifyRepoPayload(BaseModel):
     repo: str
 
 
+@app.get("/v1/connect/github/start", dependencies=[Depends(require_tenant_auth)])
+def connect_github_start_authed():
+    """Return GitHub OAuth URL for the current tenant workspace."""
+    from app.github_oauth import _oauth_configured
+
+    if not _oauth_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="GitHub OAuth not configured (GITHUB_OAUTH_CLIENT_ID/SECRET)",
+        )
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+    return {"authorizeUrl": build_authorize_url(org_id)}
+
+
 @app.get("/v1/connect/github")
 def connect_github_start():
-    """Redirect user to GitHub OAuth."""
+    """Legacy redirect — uses default org when no tenant session."""
     from app.github_oauth import _oauth_configured
 
     if not _oauth_configured():
@@ -647,14 +844,14 @@ def connect_github_callback(code: str | None = None, state: str | None = None):
     )
 
 
-@app.get("/v1/connect/github/status", dependencies=[Depends(require_api_key)])
+@app.get("/v1/connect/github/status", dependencies=[Depends(require_tenant_auth)])
 def connect_github_status():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return github_status(db, org_id)
 
 
-@app.get("/v1/connect/github/repos/available", dependencies=[Depends(require_api_key)])
+@app.get("/v1/connect/github/repos/available", dependencies=[Depends(require_tenant_auth)])
 def connect_github_repos_available():
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -667,7 +864,7 @@ def connect_github_repos_available():
     return {"repos": repos, "count": len(repos)}
 
 
-@app.post("/v1/connect/github/repos/verify", dependencies=[Depends(require_api_key)])
+@app.post("/v1/connect/github/repos/verify", dependencies=[Depends(require_tenant_auth)])
 def connect_github_verify_repo(payload: GitHubVerifyRepoPayload):
     with get_db() as db:
         org_id = ensure_default_org(db)
@@ -681,7 +878,7 @@ def connect_github_verify_repo(payload: GitHubVerifyRepoPayload):
     return {"ok": True, "repo": repo}
 
 
-@app.post("/v1/connect/github/repos", dependencies=[Depends(require_api_key)])
+@app.post("/v1/connect/github/repos", dependencies=[Depends(require_tenant_auth)])
 def connect_github_save_repos(payload: GitHubReposPayload):
     import json
 
@@ -705,7 +902,7 @@ def connect_github_save_repos(payload: GitHubReposPayload):
     return {"ok": True, "repos": verified}
 
 
-@app.post("/v1/connect/github/sync", dependencies=[Depends(require_api_key)])
+@app.post("/v1/connect/github/sync", dependencies=[Depends(require_tenant_auth)])
 def connect_github_sync():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
     with get_db() as db:

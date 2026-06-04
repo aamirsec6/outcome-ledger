@@ -22,6 +22,7 @@ _LEGACY_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("outcome_events", "raw_json", "TEXT"),
     ("organizations", "win_definition", "TEXT"),
     ("organizations", "profile_json", "TEXT"),
+    ("provider_connections", "config_json", "TEXT"),
 ]
 
 

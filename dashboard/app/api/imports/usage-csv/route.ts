@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { outcomeLedgerHeaders } from "@/lib/api-headers";
+import { getTenantApiKey } from "@/lib/tenant-session";
 
 const API_URL = (process.env.OUTCOME_LEDGER_API_URL || "").replace(/\/$/, "");
-const API_KEY = process.env.OUTCOME_LEDGER_API_KEY || "";
 
 export async function POST(request: Request) {
-  if (!API_URL || !API_KEY) {
+  const key = await getTenantApiKey();
+  if (!API_URL || !key) {
     return NextResponse.json(
       { ok: false, error: "API not configured on dashboard service" },
       { status: 503 },
@@ -23,9 +25,10 @@ export async function POST(request: Request) {
   body.append("file", file, "usage.csv");
   body.append("source", source);
 
+  const headers = await outcomeLedgerHeaders();
   const res = await fetch(`${API_URL}/v1/imports/usage-csv`, {
     method: "POST",
-    headers: { "X-Api-Key": API_KEY },
+    headers,
     body,
   });
 

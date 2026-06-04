@@ -12,6 +12,9 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ClerkUserMenu } from "@/components/clerk-user-menu";
+
+const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim());
 
 const nav = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
@@ -64,9 +67,13 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <p className="mt-auto px-2 text-[10px] theme-text-dim">
-        Not affiliated with Authon
-      </p>
+      {clerkOn ? (
+        <ClerkUserMenu />
+      ) : (
+        <p className="mt-auto px-2 text-[10px] theme-text-dim">
+          Not affiliated with Authon
+        </p>
+      )}
     </aside>
   );
 }

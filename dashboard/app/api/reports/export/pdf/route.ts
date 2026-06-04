@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "API not configured" }, { status: 503 });
   }
   const res = await fetch(`${API_URL}/v1/reports/export.pdf`, {
-    headers: outcomeLedgerHeaders(),
+    headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
   if (!res.ok) {

@@ -26,6 +26,38 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class OrganizationClerkLink(Base):
+    """Maps Clerk user/org to an Outcome Ledger workspace."""
+
+    __tablename__ = "organization_clerk_links"
+    __table_args__ = (
+        UniqueConstraint("clerk_org_id", name="uq_clerk_org_id"),
+        UniqueConstraint("org_id", name="uq_clerk_outcome_org_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    clerk_user_id: Mapped[str] = mapped_column(String(128), index=True)
+    clerk_org_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class OrganizationApiKey(Base):
+    """Per-tenant dashboard / API access (prefix ol_)."""
+
+    __tablename__ = "organization_api_keys"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    key_prefix: Mapped[str] = mapped_column(String(16))
+    key_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(64), default="default")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
 class ProviderConnection(Base):
     """OAuth / connect credentials per org (server-side only)."""
 
@@ -41,6 +73,7 @@ class ProviderConnection(Base):
     external_login: Mapped[str | None] = mapped_column(String(128), nullable=True)
     scopes: Mapped[str | None] = mapped_column(String(512), nullable=True)
     repos_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    config_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     connected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 

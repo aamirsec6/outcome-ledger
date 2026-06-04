@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
+import { outcomeLedgerHeaders } from "@/lib/api-headers";
+import { getTenantApiKey } from "@/lib/tenant-session";
 
 const API_URL = (process.env.OUTCOME_LEDGER_API_URL || "").replace(/\/$/, "");
-const API_KEY = (process.env.OUTCOME_LEDGER_API_KEY || "").trim();
 
 export async function GET() {
-  if (!API_URL || !API_KEY) {
+  const key = await getTenantApiKey();
+  if (!API_URL || !key) {
     return NextResponse.json({ error: "API not configured" }, { status: 503 });
   }
   const res = await fetch(`${API_URL}/v1/reports/export.csv`, {
-    headers: { "X-Api-Key": API_KEY },
+    headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
   if (!res.ok) {

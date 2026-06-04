@@ -8,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ contract: null }, { status: 200 });
   }
   const res = await fetch(`${API_URL}/v1/contracts/active`, {
-    headers: outcomeLedgerHeaders(),
+    headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
   const data = await res.json();

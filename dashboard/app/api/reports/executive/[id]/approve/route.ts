@@ -15,7 +15,7 @@ export async function POST(
   const res = await fetch(`${API_URL}/v1/reports/executive/${id}/approve`, {
     method: "POST",
     headers: {
-      ...outcomeLedgerHeaders(),
+      ...(await outcomeLedgerHeaders()),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),

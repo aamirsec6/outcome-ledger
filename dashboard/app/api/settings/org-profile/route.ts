@@ -10,7 +10,7 @@ export async function GET() {
   }
   try {
     const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
-      headers: outcomeLedgerHeaders(),
+      headers: await outcomeLedgerHeaders(),
       cache: "no-store",
     });
     if (!res.ok) {
@@ -31,7 +31,7 @@ export async function PUT(req: Request) {
   const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
     method: "PUT",
     headers: {
-      ...outcomeLedgerHeaders(),
+      ...(await outcomeLedgerHeaders()),
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),

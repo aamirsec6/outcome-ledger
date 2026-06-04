@@ -9,7 +9,7 @@ export async function POST() {
   }
   const res = await fetch(`${API_URL}/v1/reports/executive`, {
     method: "POST",
-    headers: outcomeLedgerHeaders(),
+    headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
   const data = await res.json().catch(() => ({}));

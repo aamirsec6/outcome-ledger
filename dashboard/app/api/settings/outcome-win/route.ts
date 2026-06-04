@@ -17,7 +17,7 @@ export async function GET() {
     );
   }
   const res = await fetch(`${API_URL}/v1/settings/outcome-win`, {
-    headers: outcomeLedgerHeaders(),
+    headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
   const data = await res.json();
@@ -31,7 +31,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const res = await fetch(`${API_URL}/v1/settings/outcome-win`, {
     method: "PUT",
-    headers: outcomeLedgerHeaders({ "Content-Type": "application/json" }),
+    headers: await outcomeLedgerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
   const data = await res.json();

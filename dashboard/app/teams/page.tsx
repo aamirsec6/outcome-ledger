@@ -1,18 +1,21 @@
 import { AttributionBanner } from "@/components/attribution-banner";
 import { MetricCard } from "@/components/metric-card";
 import { fetchOverview } from "@/lib/api";
+import { attributionInsight } from "@/lib/chart-insights";
 import { pct, usd } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
-  const { teams, attributedSpendPct } = await fetchOverview();
+  const { teams, attributedSpendPct, orgCpstUsd } = await fetchOverview();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-white">Teams</h1>
-        <p className="mt-1 text-sm text-slate-400">
+        <h1 className="text-2xl font-semibold" style={{ color: "var(--text)" }}>
+          Teams
+        </h1>
+        <p className="mt-1 text-sm theme-text-muted">
           Compare cost per accepted outcome by engineering team
         </p>
       </header>
@@ -20,43 +23,66 @@ export default async function TeamsPage() {
       <AttributionBanner attributedSpendPct={attributedSpendPct} />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {teams.map((t) => (
-          <article
-            key={t.teamId}
-            className="rounded-xl border border-slate-800 bg-slate-900/50 p-5"
-          >
-            <h2 className="text-lg font-medium text-white">{t.teamName}</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <MetricCard label="CPST" value={usd(t.cpstUsd)} accent="teal" />
-              <MetricCard
-                label="Failure cost"
-                value={pct(t.failureCostShare)}
-                hint="Failed runs in numerator"
-                accent="amber"
-              />
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-2 text-sm text-slate-400">
-              <div>
-                <dt>Spend</dt>
-                <dd className="font-medium text-slate-200">
-                  {usd(t.spendUsd)}
-                </dd>
+        {teams.map((t) => {
+          const cpstUrgency =
+            t.cpstUsd > orgCpstUsd * 1.15
+              ? "bad"
+              : t.cpstUsd < orgCpstUsd * 0.85
+                ? "good"
+                : "neutral";
+          const attrUrgency = attributionInsight(t.attributedPct).urgency;
+          return (
+            <article key={t.teamId} className="theme-panel rounded-xl p-5">
+              <h2 className="text-lg font-medium" style={{ color: "var(--text)" }}>
+                {t.teamName}
+              </h2>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <MetricCard
+                  label="CPST"
+                  value={usd(t.cpstUsd)}
+                  urgency={cpstUrgency}
+                />
+                <MetricCard
+                  label="Failure cost"
+                  value={pct(t.failureCostShare)}
+                  hint="Failed runs in numerator"
+                  urgency={t.failureCostShare > 25 ? "bad" : "good"}
+                />
               </div>
-              <div>
-                <dt>Outcomes</dt>
-                <dd className="font-medium text-slate-200">
-                  {t.acceptedOutcomes}
-                </dd>
-              </div>
-              <div>
-                <dt>Attributed</dt>
-                <dd className="font-medium text-slate-200">
-                  {pct(t.attributedPct)}
-                </dd>
-              </div>
-            </dl>
-          </article>
-        ))}
+              <dl className="mt-4 grid grid-cols-2 gap-2 text-sm theme-text-muted">
+                <div>
+                  <dt>Spend</dt>
+                  <dd className="font-medium" style={{ color: "var(--text)" }}>
+                    {usd(t.spendUsd)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Outcomes</dt>
+                  <dd className="font-medium" style={{ color: "var(--text)" }}>
+                    {t.acceptedOutcomes}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Attributed</dt>
+                  <dd
+                    className={`font-medium ${
+                      attrUrgency === "good"
+                        ? "theme-good"
+                        : attrUrgency === "bad"
+                          ? "theme-bad"
+                          : ""
+                    }`}
+                    style={
+                      attrUrgency === "warn" ? { color: "var(--warm)" } : undefined
+                    }
+                  >
+                    {pct(t.attributedPct)}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          );
+        })}
       </div>
     </div>
   );

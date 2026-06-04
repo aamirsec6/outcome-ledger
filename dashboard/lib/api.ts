@@ -206,6 +206,24 @@ export type AttributionBreakdown = {
   targetPct: number;
   unassignedBySource: { source: string; spendUsd: number }[];
   attributedByTeam: { teamId: string; spendUsd: number }[];
+  outcomeGraph?: {
+    outcomeCount: number;
+    linkedSpendUsd: number;
+    unlinkedSpendUsd: number;
+    outcomeLinkedSpendPct: number;
+    avgLinkConfidence: number;
+    windowBeforeDays: number;
+    windowAfterDays: number;
+    sampleLinks: {
+      outcomeId: string;
+      repo: string;
+      teamId: string | null;
+      occurredAt: string;
+      linkedSpendUsd: number;
+      confidence: number;
+      method: string;
+    }[];
+  };
 };
 
 export async function fetchAttribution(): Promise<AttributionBreakdown | null> {

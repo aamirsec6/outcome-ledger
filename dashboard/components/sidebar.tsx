@@ -26,13 +26,21 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-slate-800 bg-slate-950 px-3 py-5">
+    <aside
+      className="flex w-56 shrink-0 flex-col px-3 py-5"
+      style={{
+        borderRight: "1px solid var(--border)",
+        background: "var(--bg-elevated)",
+      }}
+    >
       <div className="mb-8 px-2">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-teal-400" />
+          <BarChart3 className="h-6 w-6 theme-accent" style={{ color: "var(--accent)" }} />
           <div>
-            <p className="text-sm font-semibold text-white">Outcome Ledger</p>
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">
+            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              Outcome Ledger
+            </p>
+            <p className="text-[10px] uppercase tracking-wider theme-text-dim">
               Value accounting
             </p>
           </div>
@@ -47,10 +55,19 @@ export function Sidebar() {
               href={href}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-                active
-                  ? "bg-teal-500/15 text-teal-300"
-                  : "text-slate-400 hover:bg-slate-900 hover:text-slate-200",
+                active ? "bg-accent-dim theme-accent" : "theme-text-muted",
               )}
+              style={
+                active
+                  ? undefined
+                  : { color: "var(--text-muted)" }
+              }
+              onMouseEnter={(e) => {
+                if (!active) e.currentTarget.style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!active) e.currentTarget.style.background = "";
+              }}
             >
               <Icon className="h-4 w-4" />
               {label}
@@ -58,7 +75,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <p className="mt-auto px-2 text-[10px] text-slate-600">
+      <p className="mt-auto px-2 text-[10px] theme-text-dim">
         Not affiliated with Authon
       </p>
     </aside>

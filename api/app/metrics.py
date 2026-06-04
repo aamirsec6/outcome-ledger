@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import logging
 import os
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func
@@ -275,6 +278,7 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
 def build_attribution_breakdown(
     db: Session, org_id: str, *, lookback_days: int = 90
 ) -> dict:
+    from app.attribution import build_outcome_linked_summary
     since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
     total_spend = (
         db.query(func.coalesce(func.sum(UsageEvent.cost_usd), 0.0))
@@ -325,6 +329,16 @@ def build_attribution_breakdown(
     ):
         by_team[str(team_id)] += float(cost or 0)
 
+    try:
+        outcome_graph = build_outcome_linked_summary(
+            db, org_id, lookback_days=lookback_days
+        )
+    except Exception:
+        logger.exception("attribution outcome_graph failed")
+        from app.attribution import _empty_graph
+
+        outcome_graph = _empty_graph()
+
     return {
         "periodLabel": f"Last {lookback_days} days",
         "totalSpendUsd": round(total_spend, 2),
@@ -334,6 +348,7 @@ def build_attribution_breakdown(
         "unassignedSpendPct": round(unassigned_pct, 1),
         "targetPct": 80,
         "meetsTarget": attributed_pct >= 80,
+        "outcomeGraph": outcome_graph,
         "unassignedBySource": [
             {"source": k, "spendUsd": round(v, 2)}
             for k, v in sorted(by_source.items(), key=lambda x: -x[1])

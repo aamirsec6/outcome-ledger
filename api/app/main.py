@@ -74,9 +74,16 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI):
     cfg = validate_startup_config()
     init_db()
-    with get_db() as db:
-        org_id = ensure_default_org(db)
-        ensure_default_contract(db, org_id)
+    try:
+        with get_db() as db:
+            org_id = ensure_default_org(db)
+            ensure_default_contract(db, org_id)
+    except Exception:
+        logger.warning("Startup org init failed — re-running migrations")
+        init_db()
+        with get_db() as db:
+            org_id = ensure_default_org(db)
+            ensure_default_contract(db, org_id)
     logger.info("Outcome Ledger API ready production=%s", cfg.get("production"))
     yield
 
@@ -523,6 +530,8 @@ def reports_export_pdf():
             body = export_cpst_pdf(db, org_id, lookback_days=lookback, require_approved=True)
         except ValueError as e:
             raise HTTPException(status_code=409, detail=str(e)) from e
+        except RuntimeError as e:
+            raise HTTPException(status_code=503, detail=str(e)) from e
     return Response(
         content=body,
         media_type="application/pdf",
@@ -533,9 +542,13 @@ def reports_export_pdf():
 @app.get("/v1/metrics/attribution", dependencies=[Depends(require_api_key)])
 def metrics_attribution():
     lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
-    with get_db() as db:
-        org_id = ensure_default_org(db)
-        return build_attribution_breakdown(db, org_id, lookback_days=lookback)
+    try:
+        with get_db() as db:
+            org_id = ensure_default_org(db)
+            return build_attribution_breakdown(db, org_id, lookback_days=lookback)
+    except Exception as exc:
+        logger.exception("metrics_attribution failed")
+        raise HTTPException(status_code=500, detail="Attribution metrics failed") from exc
 
 
 class ExecutiveApprovePayload(BaseModel):

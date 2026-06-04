@@ -53,7 +53,9 @@ export function OrgProfilePanel({ initial }: { initial: OrgProfile }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage(data.detail || data.error || "Save failed");
+        setMessage(
+          data.error || data.detail || (typeof data.detail === "string" ? data.detail : "Save failed"),
+        );
         return;
       }
       setMessage("Saved. PDF board pack will use this header.");

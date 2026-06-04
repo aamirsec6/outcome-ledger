@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { attributionInsight, urgencyClasses } from "@/lib/chart-insights";
 import { cn } from "@/lib/cn";
 import { pct } from "@/lib/format";
 
@@ -14,39 +15,42 @@ export function AttributionBanner({
   targetPct = 80,
   className,
 }: Props) {
-  const ok = attributedSpendPct >= targetPct;
+  const insight = attributionInsight(attributedSpendPct);
+  const Icon =
+    insight.urgency === "good"
+      ? CheckCircle2
+      : insight.urgency === "bad"
+        ? XCircle
+        : AlertTriangle;
+
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-xl border px-4 py-3 text-sm",
-        ok
-          ? "border-teal-500/30 bg-teal-500/10 text-teal-100"
-          : "border-amber-500/30 bg-amber-500/10 text-amber-100",
+        "flex items-start gap-3 rounded-xl px-4 py-3 text-sm",
+        urgencyClasses(insight.urgency),
         className,
       )}
     >
-      {ok ? (
-        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-teal-400" />
-      ) : (
-        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
-      )}
+      <Icon className="mt-0.5 h-5 w-5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-white">
-          Attributed spend: {pct(attributedSpendPct)}
-          <span className="font-normal text-slate-400">
+        <p className="font-medium" style={{ color: "var(--text)" }}>
+          {insight.label}: {pct(attributedSpendPct)}
+          <span className="font-normal theme-text-muted">
             {" "}
             · target ≥{targetPct}%
           </span>
         </p>
-        <p className="mt-1 text-slate-400">
-          {ok
+        <p className="mt-1 theme-text-muted">
+          {insight.urgency === "good"
             ? "Spend is sufficiently tagged to teams for board-ready CPST."
-            : "Map repos to teams and connect vendors so unattributed spend drops below 20%."}
+            : insight.urgency === "bad"
+              ? "Over half of spend is unattributed — board exports will look weak until mappings are fixed."
+              : "Map repos to teams and connect vendors so unattributed spend drops below 20%."}
         </p>
-        {!ok ? (
+        {insight.urgency !== "good" ? (
           <Link
             href="/settings"
-            className="mt-2 inline-block text-xs font-medium text-teal-400 hover:text-teal-300"
+            className="mt-2 inline-block text-xs font-medium theme-accent"
           >
             Team mappings →
           </Link>

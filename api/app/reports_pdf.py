@@ -3,13 +3,22 @@ from __future__ import annotations
 import os
 from io import BytesIO
 
-from fpdf import FPDF
 from sqlalchemy.orm import Session
 
 from app.executive_reports import STATUS_APPROVED, get_report_for_export
 from app.metrics import build_overview
 from app.org_profile import org_profile_payload, profile_meta_lines, profile_subtitle
 from app.outcome_contracts import active_contract_payload, ensure_default_contract
+
+
+def _fpdf_base():
+    try:
+        from fpdf import FPDF
+    except ImportError as exc:
+        raise RuntimeError(
+            "PDF export requires fpdf2 (pip install fpdf2)"
+        ) from exc
+    return FPDF
 
 
 def _pdf_safe(text: str) -> str:
@@ -28,7 +37,7 @@ def _pdf_safe(text: str) -> str:
     return text.encode("latin-1", errors="replace").decode("latin-1")
 
 
-class _BoardPdf(FPDF):
+class _BoardPdf(_fpdf_base()):
     org_profile: dict = {}
     period_label: str = ""
 

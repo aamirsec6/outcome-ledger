@@ -1,9 +1,9 @@
-# Railway service: outcome-ledger-landing
-# Root Directory MUST be: landing
+# Railway service: outcome-ledger-landing — Root Directory MUST be: landing
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+watchPatterns = ["/landing/**"]
 
 [deploy]
 healthcheckPath = "/api/health"

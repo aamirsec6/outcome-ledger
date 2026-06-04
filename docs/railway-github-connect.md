@@ -1,6 +1,6 @@
 # Connect Railway to GitHub (Outcome Ledger monorepo)
 
-Outcome Ledger is a **monorepo**: one GitHub repo, **two Railway services**. GitHub is linked **per service**, not once at the project level.
+Outcome Ledger is a **monorepo**: one GitHub repo, **three Railway services** (API, dashboard, landing). GitHub is linked **per service**, not once at the project level.
 
 **Repo:** https://github.com/aamirsec6/outcome-ledger  
 **Railway project:** `outcome-ledger` (ID `ffec287d-1920-4838-bcbb-fdb10fc8baba`)
@@ -39,23 +39,35 @@ In Railway: **Account Settings** (avatar) → **Connections** → confirm **GitH
 
 ## Step 2 — Dashboard service (`outcome-ledger-dashboard`)
 
-Repeat for the **second** service:
-
 1. Click **`outcome-ledger-dashboard`**.
-2. **Settings** → **Source** → **Connect Repo** → same repo **`aamirsec6/outcome-ledger`**, branch **`main`**.
+2. **Settings** → **Source** → **Connect Repo** → **`aamirsec6/outcome-ledger`**, branch **`main`**.
 3. **Root Directory:** `dashboard`
-4. Deploy.
+4. **Builder:** Dockerfile · **Dockerfile path:** `Dockerfile` (not `dashboard/Dockerfile`)
+5. Deploy.
 
 ---
 
-## Checklist (both services)
+## Step 3 — Landing service (`outcome-ledger-landing`)
 
-| Service | Root directory | Health check |
-|---------|----------------|--------------|
-| `outcome-ledger` | `api` | `/health` |
-| `outcome-ledger-dashboard` | `dashboard` | `/api/health` |
+1. Click **`outcome-ledger-landing`**.
+2. **Settings** → **Source** → same repo, branch **`main`**.
+3. **Root Directory:** `landing`
+4. **Builder:** Dockerfile · **Dockerfile path:** `Dockerfile`
+5. Deploy.
 
-After a successful link, every push to `main` should trigger a deploy on **both** services (if both are connected).
+---
+
+## Checklist (all services)
+
+| Service | Root directory | Health check | Watch paths (in `railway.toml`) |
+|---------|----------------|--------------|----------------------------------|
+| `outcome-ledger` | `api` | `/health` | `/api/**` |
+| `outcome-ledger-dashboard` | `dashboard` | `/api/health` | `/dashboard/**` |
+| `outcome-ledger-landing` | `landing` | `/api/health` | `/landing/**` |
+
+If **Root Directory** is empty, GitHub deploys use **Railpack at repo root** and fail in ~5s with `Railpack could not determine how to build the app` (listing `api/`, `dashboard/`, `landing/`). That is the most common crash.
+
+After root directories are set, only matching paths should redeploy each service (see `watchPatterns` in each folder’s `railway.toml`).
 
 ---
 
@@ -75,6 +87,9 @@ Config in repo (when root dir is set correctly, Railway reads these):
 
 - `api/railway.toml` + `api/railway.json` → `builder: DOCKERFILE`
 - `dashboard/railway.toml` + `dashboard/railway.json` → `builder: DOCKERFILE`
+- `landing/railway.toml` + `landing/railway.json` → `builder: DOCKERFILE`
+
+Optional: GitHub Action `.github/workflows/railway-deploy.yml` deploys only changed paths via `railway up --path-as-root` (add `RAILWAY_TOKEN` secret from Railway → Project → Settings → Tokens).
 
 If logs show `using build driver railpack` and `Detected Node` / `pnpm`, the service is still on Railpack — switch builder in the UI.
 

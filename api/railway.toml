@@ -1,8 +1,9 @@
-# Outcome Ledger API — Railway Root Directory: api
+# Railway service: outcome-ledger — Root Directory MUST be: api
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+watchPatterns = ["/api/**"]
 
 [deploy]
 healthcheckPath = "/health"

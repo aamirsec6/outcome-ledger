@@ -29,7 +29,9 @@ cp .env.example .env.local   # OUTCOME_LEDGER_API_URL=http://127.0.0.1:8090
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3001
+
+**Reports flow:** Integrations → sync → Reports → Generate narrative → Approve → Export PDF
 
 ## Railway
 

@@ -1,8 +1,9 @@
 import { CheckCircle2, Circle, Upload } from "lucide-react";
+import { ConnectWizard } from "@/components/connect-wizard";
 import { GitHubConnectPanel } from "@/components/github-connect";
 import { SpendCsvUpload } from "@/components/spend-csv-upload";
 import { SyncAllButton } from "@/components/sync-all-button";
-import { fetchOverview } from "@/lib/api";
+import { fetchOverview, fetchTeamMappings } from "@/lib/api";
 import {
   connectGithubUrl,
   fetchAvailableRepos,
@@ -23,14 +24,16 @@ export default async function IntegrationsPage({
 }: {
   searchParams: Promise<{ github?: string; login?: string }>;
 }) {
-  const [params, { integrations }, githubStatus, available] = await Promise.all([
+  const [params, overview, mappings, githubStatus, available] = await Promise.all([
     searchParams,
     fetchOverview(),
+    fetchTeamMappings(),
     fetchGithubStatus(),
     fetchGithubStatus().then(async (s) =>
       s.connected ? fetchAvailableRepos() : Promise.resolve({ repos: [] }),
     ),
   ]);
+  const { integrations, attributedSpendPct, lastSync } = overview;
 
   const others = integrations.filter((i) => i.id !== "github");
 
@@ -47,6 +50,14 @@ export default async function IntegrationsPage({
           </p>
         ) : null}
       </header>
+
+      <ConnectWizard
+        integrations={integrations}
+        githubConnected={githubStatus.connected}
+        hasTeamMappings={mappings.length > 0}
+        attributedSpendPct={attributedSpendPct}
+        hasLastSync={Boolean(lastSync)}
+      />
 
       <SyncAllButton />
 

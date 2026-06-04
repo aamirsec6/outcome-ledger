@@ -35,6 +35,16 @@ curl -X POST http://127.0.0.1:8090/v1/imports/usage-csv \
 
 Point `OUTCOME_LEDGER_API_URL=http://127.0.0.1:8090` in `dashboard/.env.local`.
 
+### Reports (board pack)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/v1/reports/executive` | Generate exec narrative (template or OpenAI) |
+| GET | `/v1/reports/executive/latest` | Latest narrative run |
+| POST | `/v1/reports/executive/{id}/approve` | Human approve before PDF (`signerName`) |
+| GET | `/v1/reports/export.pdf` | Board pack PDF (requires approved narrative) |
+| GET | `/v1/metrics/attribution` | Attributed vs unassigned spend breakdown |
+
 ### Moat APIs (outcome contract + CPST history)
 
 | Method | Path | Purpose |

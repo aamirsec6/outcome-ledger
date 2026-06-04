@@ -267,6 +267,79 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
     }
 
 
+def build_attribution_breakdown(
+    db: Session, org_id: str, *, lookback_days: int = 90
+) -> dict:
+    since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    total_spend = (
+        db.query(func.coalesce(func.sum(UsageEvent.cost_usd), 0.0))
+        .filter(UsageEvent.org_id == org_id, UsageEvent.period_start >= since)
+        .scalar()
+    )
+    total_spend = float(total_spend or 0)
+
+    attributed = (
+        db.query(func.coalesce(func.sum(UsageEvent.cost_usd), 0.0))
+        .filter(
+            UsageEvent.org_id == org_id,
+            UsageEvent.period_start >= since,
+            UsageEvent.team_id.isnot(None),
+            UsageEvent.team_id != "unassigned",
+        )
+        .scalar()
+    )
+    attributed = float(attributed or 0)
+    unassigned = max(0.0, total_spend - attributed)
+    attributed_pct = (attributed / total_spend * 100) if total_spend > 0 else 0.0
+    unassigned_pct = (unassigned / total_spend * 100) if total_spend > 0 else 0.0
+
+    by_source: dict[str, float] = defaultdict(float)
+    for source, cost in (
+        db.query(UsageEvent.source, func.sum(UsageEvent.cost_usd))
+        .filter(
+            UsageEvent.org_id == org_id,
+            UsageEvent.period_start >= since,
+            (UsageEvent.team_id.is_(None)) | (UsageEvent.team_id == "unassigned"),
+        )
+        .group_by(UsageEvent.source)
+        .all()
+    ):
+        by_source[str(source or "unknown")] += float(cost or 0)
+
+    by_team: dict[str, float] = defaultdict(float)
+    for team_id, cost in (
+        db.query(UsageEvent.team_id, func.sum(UsageEvent.cost_usd))
+        .filter(
+            UsageEvent.org_id == org_id,
+            UsageEvent.period_start >= since,
+            UsageEvent.team_id.isnot(None),
+            UsageEvent.team_id != "unassigned",
+        )
+        .group_by(UsageEvent.team_id)
+        .all()
+    ):
+        by_team[str(team_id)] += float(cost or 0)
+
+    return {
+        "periodLabel": f"Last {lookback_days} days",
+        "totalSpendUsd": round(total_spend, 2),
+        "attributedSpendUsd": round(attributed, 2),
+        "unassignedSpendUsd": round(unassigned, 2),
+        "attributedSpendPct": round(attributed_pct, 1),
+        "unassignedSpendPct": round(unassigned_pct, 1),
+        "targetPct": 80,
+        "meetsTarget": attributed_pct >= 80,
+        "unassignedBySource": [
+            {"source": k, "spendUsd": round(v, 2)}
+            for k, v in sorted(by_source.items(), key=lambda x: -x[1])
+        ],
+        "attributedByTeam": [
+            {"teamId": k, "spendUsd": round(v, 2)}
+            for k, v in sorted(by_team.items(), key=lambda x: -x[1])
+        ],
+    }
+
+
 def _vendor_configured(vendor: str) -> bool:
     if vendor == "openai":
         return bool((os.getenv("OPENAI_API_KEY") or "").strip())

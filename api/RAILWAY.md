@@ -5,7 +5,7 @@
 ## Create the service (one-time)
 
 1. Railway project → **New Service** → same GitHub repo.
-2. **Service name:** `outcome-ledger-api`
+2. **Service name:** `outcome-ledger` (production) or `outcome-ledger-api` if you created it that way
 3. **Root Directory:** `api`
 4. **Add PostgreSQL** (recommended) — Railway injects `DATABASE_URL` automatically.
 

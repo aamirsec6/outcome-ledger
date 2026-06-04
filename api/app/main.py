@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from pydantic import BaseModel
 
 from app.db import get_db, init_db
@@ -28,7 +28,12 @@ from app.ingest_github_commits import ingest_github_default_branch_commits
 from app.outcome_contracts import WIN_TYPE_COMMIT, primary_win_type
 from app.cpst_history import list_cpst_history, record_cpst_snapshots
 from app.constants import metric_version
-from app.metrics import build_overview, ensure_default_org
+from app.executive_reports import (
+    approve_executive_report,
+    create_executive_report,
+    latest_executive_report,
+)
+from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
 from app.outcome_contracts import (
     _approval_for_contract,
     active_contract_payload,
@@ -43,6 +48,7 @@ from app.outcome_contracts import (
     publish_contract,
 )
 from app.reports import export_cpst_csv
+from app.reports_pdf import export_cpst_pdf
 from app.revert_check import check_reverts
 from app.sync_audit import sync_history
 from app.sync_pipeline import run_full_sync
@@ -352,6 +358,71 @@ def reports_export_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=outcome-ledger-cpst.csv"},
     )
+
+
+@app.get("/v1/reports/export.pdf", dependencies=[Depends(require_api_key)])
+def reports_export_pdf():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        try:
+            body = export_cpst_pdf(db, org_id, lookback_days=lookback, require_approved=True)
+        except ValueError as e:
+            raise HTTPException(status_code=409, detail=str(e)) from e
+    return Response(
+        content=body,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=outcome-ledger-board-pack.pdf"},
+    )
+
+
+@app.get("/v1/metrics/attribution", dependencies=[Depends(require_api_key)])
+def metrics_attribution():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_attribution_breakdown(db, org_id, lookback_days=lookback)
+
+
+class ExecutiveApprovePayload(BaseModel):
+    signerName: str
+
+
+@app.post("/v1/reports/executive", dependencies=[Depends(require_api_key)])
+def reports_executive_generate():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return create_executive_report(db, org_id, lookback_days=lookback)
+
+
+@app.get("/v1/reports/executive/latest", dependencies=[Depends(require_api_key)])
+def reports_executive_latest():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        report = latest_executive_report(db, org_id)
+    if not report:
+        return {"report": None}
+    return {"report": report}
+
+
+@app.post(
+    "/v1/reports/executive/{report_id}/approve",
+    dependencies=[Depends(require_api_key)],
+)
+def reports_executive_approve(report_id: str, payload: ExecutiveApprovePayload):
+    name = (payload.signerName or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="signerName required")
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        try:
+            report = approve_executive_report(
+                db, org_id, report_id, signer_name=name
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e)) from e
+    return {"ok": True, "report": report}
 
 
 class GitHubReposPayload(BaseModel):

@@ -1,3 +1,4 @@
+import { AttributionBanner } from "@/components/attribution-banner";
 import { MetricCard } from "@/components/metric-card";
 import { fetchOverview } from "@/lib/api";
 import { pct, usd } from "@/lib/format";
@@ -5,7 +6,7 @@ import { pct, usd } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function TeamsPage() {
-  const { teams } = await fetchOverview();
+  const { teams, attributedSpendPct } = await fetchOverview();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -15,6 +16,8 @@ export default async function TeamsPage() {
           Compare cost per accepted outcome by engineering team
         </p>
       </header>
+
+      <AttributionBanner attributedSpendPct={attributedSpendPct} />
 
       <div className="grid gap-4 md:grid-cols-2">
         {teams.map((t) => (
@@ -43,6 +46,12 @@ export default async function TeamsPage() {
                 <dt>Outcomes</dt>
                 <dd className="font-medium text-slate-200">
                   {t.acceptedOutcomes}
+                </dd>
+              </div>
+              <div>
+                <dt>Attributed</dt>
+                <dd className="font-medium text-slate-200">
+                  {pct(t.attributedPct)}
                 </dd>
               </div>
             </dl>

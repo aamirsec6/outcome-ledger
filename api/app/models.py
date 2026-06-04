@@ -169,6 +169,25 @@ class OutcomeContractApproval(Base):
     signed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class ReportRun(Base):
+    """Executive narrative job — metrics JSON in, prose out; human approval gate."""
+
+    __tablename__ = "report_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
+    narrative: Mapped[str] = mapped_column(Text)
+    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    input_row_count: Mapped[int] = mapped_column(default=0)
+    metrics_json: Mapped[str] = mapped_column(Text)
+    approved_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class CpstSnapshot(Base):
     """Immutable CPST rollup per period — moat: years of comparable history."""
 

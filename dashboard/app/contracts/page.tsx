@@ -13,9 +13,8 @@ export default async function ContractsPage() {
     : { contract: null, history: [], versions: [] };
 
   const contract = moat.contract as OutcomeContract | null;
-  const drafts = (moat.versions || []).filter(
-    (v: OutcomeContract) => v.status === "draft",
-  );
+  const versions = moat.versions as OutcomeContract[];
+  const drafts = versions.filter((v) => v.status === "draft");
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">

@@ -1,13 +1,18 @@
+import { AttributionBanner } from "@/components/attribution-banner";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
 import { WinsPanel } from "@/components/wins-panel";
-import { fetchOverview, fetchWins } from "@/lib/api";
+import { fetchAttribution, fetchOverview, fetchWins } from "@/lib/api";
 import { pct, usd } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const [data, winsData] = await Promise.all([fetchOverview(), fetchWins()]);
+  const [data, winsData, attribution] = await Promise.all([
+    fetchOverview(),
+    fetchWins(),
+    fetchAttribution(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -41,6 +46,22 @@ export default async function OverviewPage() {
           </p>
         ) : null}
       </header>
+
+      <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
+
+      {attribution && !attribution.meetsTarget && attribution.unassignedBySource.length > 0 ? (
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-sm text-slate-400">
+          <p className="font-medium text-slate-300">Unassigned spend by source</p>
+          <ul className="mt-2 space-y-1">
+            {attribution.unassignedBySource.map((row) => (
+              <li key={row.source} className="flex justify-between tabular-nums">
+                <span>{row.source}</span>
+                <span>{usd(row.spendUsd)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard

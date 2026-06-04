@@ -1,10 +1,11 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
   "services": {
-    "outcome-ledger-api": {
+    "outcome-ledger": {
       "build": {
         "builder": "DOCKERFILE",
-        "dockerfilePath": "api/Dockerfile"
+        "dockerfilePath": "api/Dockerfile",
+        "watchPatterns": ["api/**"]
       },
       "deploy": {
         "healthcheckPath": "/health",
@@ -15,7 +16,8 @@
     "outcome-ledger-dashboard": {
       "build": {
         "builder": "DOCKERFILE",
-        "dockerfilePath": "dashboard/Dockerfile"
+        "dockerfilePath": "dashboard/Dockerfile",
+        "watchPatterns": ["dashboard/**"]
       },
       "deploy": {
         "healthcheckPath": "/api/health",

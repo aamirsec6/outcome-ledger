@@ -3,6 +3,11 @@
 **Project:** `outcome-ledger` (new — not `aware-insight`)  
 **Project ID:** `ffec287d-1920-4838-bcbb-fdb10fc8baba`
 
+## Connect GitHub (auto-deploy on push)
+
+Monorepo: link **the same repo** on **each** service with a different root directory.  
+See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step UI instructions and troubleshooting.
+
 ## Services
 
 | Service | Root Directory | Public URL |

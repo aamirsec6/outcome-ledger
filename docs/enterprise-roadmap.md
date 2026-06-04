@@ -1,6 +1,6 @@
 # Outcome Ledger — Enterprise roadmap
 
-**Status:** In progress (Phase A started)  
+**Status:** Phase A complete · PRD MVP export layer shipped  
 **Metric standard:** `CPST v1.0` — fully loaded AI spend ÷ **stable accepted outcomes**  
 **Stable outcome:** merged PR, not reverted within `OUTCOME_STABLE_DAYS` (default 7)
 
@@ -39,12 +39,14 @@
 
 ## Phase C — Executive product
 
-| # | Deliverable |
-|---|-------------|
-| C1 | PDF export with methodology appendix |
-| C2 | LLM exec narrative (metrics JSON in only) |
-| C3 | Human approve before export |
-| C4 | Workflow classifier (feature / bugfix / chore) |
+| # | Deliverable | Status |
+|---|-------------|--------|
+| C1 | PDF export with methodology appendix | ✅ `GET /v1/reports/export.pdf` |
+| C2 | LLM exec narrative (metrics JSON in only) | ✅ `POST /v1/reports/executive` (template fallback; OpenAI optional) |
+| C3 | Human approve before export | ✅ `POST /v1/reports/executive/{id}/approve` |
+| C4 | Workflow classifier (feature / bugfix / chore) | ⬜ |
+| C5 | Connect wizard (MVP) | ✅ Integrations page |
+| C6 | Attribution breakdown UX | ✅ `GET /v1/metrics/attribution` + dashboard banners |
 
 ---
 
@@ -70,7 +72,12 @@
 | GET/PUT | `/v1/settings/team-mappings` | GET public / PUT key |
 | GET | `/v1/settings/vendors` | public |
 | GET | `/v1/sync/history` | public |
-| GET | `/v1/reports/export.csv` | public |
+| GET | `/v1/reports/export.csv` | API key |
+| GET | `/v1/reports/export.pdf` | API key (requires approved narrative) |
+| POST | `/v1/reports/executive` | API key |
+| GET | `/v1/reports/executive/latest` | API key |
+| POST | `/v1/reports/executive/{id}/approve` | API key |
+| GET | `/v1/metrics/attribution` | API key |
 | GET | `/v1/contracts/active` | API key |
 | GET | `/v1/contracts/versions` | API key |
 | GET | `/v1/contracts/audit` | API key |

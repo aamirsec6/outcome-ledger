@@ -147,6 +147,54 @@ export async function fetchContractMoat(): Promise<ContractMoat> {
   }
 }
 
+export type ExecutiveReport = {
+  id: string;
+  status: string;
+  narrative: string;
+  model?: string | null;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  createdAt?: string | null;
+};
+
+export async function fetchLatestExecutiveReport(): Promise<ExecutiveReport | null> {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/reports/executive/latest`, {
+      headers: outcomeLedgerHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.report ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export type AttributionBreakdown = {
+  attributedSpendPct: number;
+  unassignedSpendPct: number;
+  meetsTarget: boolean;
+  targetPct: number;
+  unassignedBySource: { source: string; spendUsd: number }[];
+  attributedByTeam: { teamId: string; spendUsd: number }[];
+};
+
+export async function fetchAttribution(): Promise<AttributionBreakdown | null> {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/metrics/attribution`, {
+      headers: outcomeLedgerHeaders(),
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchOverview(): Promise<Overview & { dataSource?: string }> {
   if (!API_URL) {
     return { ...getMockOverview(), dataSource: "mock" };

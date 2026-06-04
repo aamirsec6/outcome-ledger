@@ -66,6 +66,12 @@ export default async function IntegrationsPage({
       />
 
       <SpendCsvUpload
+        source="openai"
+        label="OpenAI spend (CSV)"
+        hint="Use when service account keys cannot read billing API. CSV: date, cost_usd (see docs/openai-setup.md)."
+      />
+
+      <SpendCsvUpload
         source="cursor"
         label="Cursor spend"
         hint="Upload a CSV from Billing & Invoices (date + amount). Example: 2026-06-02, $23.60."

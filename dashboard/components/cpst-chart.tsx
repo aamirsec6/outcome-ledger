@@ -27,25 +27,33 @@ export function CpstChart({
   const insight = cpstTrendInsight(data);
 
   const chartData = data.map((d, i, arr) => {
-    const cpst = d.outcomes > 0 ? Math.round(d.spend / d.outcomes) : 0;
+    const cpst =
+      d.outcomes > 0 ? Math.round((d.spend / d.outcomes) * 100) / 100 : 0;
     let dotColor = colors.neutral;
     if (i > 0 && arr[i - 1].outcomes > 0) {
-      const prev = Math.round(arr[i - 1].spend / arr[i - 1].outcomes);
+      const prev =
+        Math.round((arr[i - 1].spend / arr[i - 1].outcomes) * 100) / 100;
       if (cpst < prev * 0.92) dotColor = colors.good;
       else if (cpst > prev * 1.08) dotColor = colors.bad;
     }
     return { week: d.week, cpst, dotColor, outcomes: d.outcomes };
   });
 
+  const withCpst = chartData.filter((p) => p.outcomes > 0 && p.cpst > 0);
   const avgCpst =
-    chartData.filter((p) => p.outcomes > 0).length > 0
+    withCpst.length > 0
       ? Math.round(
-          chartData
-            .filter((p) => p.outcomes > 0)
-            .reduce((s, p) => s + p.cpst, 0) /
-            chartData.filter((p) => p.outcomes > 0).length,
-        )
-      : 0;
+          (withCpst.reduce((s, p) => s + p.cpst, 0) / withCpst.length) * 100,
+        ) / 100
+      : chartData.some((p) => p.outcomes > 0)
+        ? Math.round(
+            (chartData
+              .filter((p) => p.outcomes > 0)
+              .reduce((s, p) => s + p.cpst, 0) /
+              chartData.filter((p) => p.outcomes > 0).length) *
+              100,
+          ) / 100
+        : 0;
 
   const lineColor =
     insight.urgency === "good"
@@ -69,7 +77,9 @@ export function CpstChart({
             <YAxis
               stroke={colors.axis}
               fontSize={12}
-              tickFormatter={(v) => `$${v}`}
+              tickFormatter={(v) =>
+                v < 1 ? `$${v.toFixed(2)}` : v < 100 ? `$${v.toFixed(0)}` : `$${v}`
+              }
             />
             <Tooltip
               contentStyle={{
@@ -78,7 +88,10 @@ export function CpstChart({
                 borderRadius: 8,
                 color: "var(--text)",
               }}
-              formatter={(value: number) => [`$${value}`, "CPST"]}
+              formatter={(value: number) => [
+                value < 1 ? `$${value.toFixed(2)}` : `$${value}`,
+                "CPST",
+              ]}
               labelStyle={{ color: "var(--text-muted)" }}
             />
             {avgCpst > 0 ? (

@@ -9,7 +9,7 @@ import {
   attributionInsight,
   cpstTrendInsight,
 } from "@/lib/chart-insights";
-import { pct, usd } from "@/lib/format";
+import { pct, usd, usdCpst } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +88,7 @@ export default async function OverviewPage() {
         />
         <MetricCard
           label="Org CPST"
-          value={usd(data.orgCpstUsd)}
+          value={usdCpst(data.orgCpstUsd)}
           hint={cpstInsight.detail}
           urgency={cpstInsight.urgency}
         />

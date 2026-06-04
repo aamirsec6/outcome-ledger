@@ -213,10 +213,11 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
             }
         )
 
+    # Rolling 7-day windows ending at now (W1 = oldest … W5 = most recent)
     spend_trend = []
     for i in range(5):
-        w_start = since + timedelta(days=i * (lookback_days // 5))
-        w_end = w_start + timedelta(days=lookback_days // 5)
+        w_end = now - timedelta(days=(4 - i) * 7)
+        w_start = w_end - timedelta(days=7)
         w_spend = (
             db.query(func.coalesce(func.sum(UsageEvent.cost_usd), 0.0))
             .filter(
@@ -229,7 +230,7 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
         w_out = (
             db.query(func.count())
             .filter(
-                *_stable_outcome_filter(w_start, now, org_id=org_id, db=db),
+                *_stable_outcome_filter(w_start, w_end, org_id=org_id, db=db),
                 OutcomeEvent.occurred_at < w_end,
             )
             .scalar()

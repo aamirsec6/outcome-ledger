@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/page-header";
 import { ReportsPanel } from "@/components/reports-panel";
 import { fetchLatestExecutiveReport, fetchOverview, hasLiveApi } from "@/lib/api";
-import { usd, pct } from "@/lib/format";
+import { usd, pct, usdCpst } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ function buildFallbackMemo(
     "",
     `Period: ${data.periodLabel}`,
     `Total AI spend: ${usd(data.totalSpendUsd)}`,
-    `Organization CPST: ${usd(data.orgCpstUsd)}`,
+    `Organization CPST: ${usdCpst(data.orgCpstUsd)}`,
     `Attributed spend: ${pct(data.attributedSpendPct)}`,
     "",
     "Click Generate narrative when connected to the API.",

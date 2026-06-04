@@ -94,6 +94,7 @@ def _build_outcome_linked_summary(
         key = (ev.repo or "").strip() or "__none__"
         usage_by_repo[key].append(ev)
 
+    orphan_usage = list(usage_by_repo.get("__none__", []))
     total_spend = sum(float(u.cost_usd or 0) for u in all_usage)
     linked_event_ids: set[str] = set()
     links: list[dict] = []
@@ -103,6 +104,10 @@ def _build_outcome_linked_summary(
         end = _as_utc(outcome.occurred_at) + timedelta(days=WINDOW_AFTER_DAYS)
         repo_key = (outcome.repo or "").strip() or "__none__"
         pool = list(usage_by_repo.get(repo_key, []))
+        # CSV / vendor rows without repo still count in the outcome time window
+        if repo_key != "__none__" and orphan_usage:
+            seen = {e.id for e in pool}
+            pool.extend(e for e in orphan_usage if e.id not in seen)
         if outcome.team_id:
             pool = [e for e in pool if e.team_id in (None, outcome.team_id)]
         if not pool and repo_key != "__none__":

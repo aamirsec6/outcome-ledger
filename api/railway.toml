@@ -3,7 +3,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
-watchPatterns = ["/api/**"]
+watchPatterns = ["/api/**", "/dashboard/lib/format.ts", "/dashboard/components/cpst-chart.tsx"]
 
 [deploy]
 healthcheckPath = "/health"

@@ -35,7 +35,7 @@ export function cpstTrendInsight(
     return {
       urgency: "neutral",
       label: "Baseline week",
-      detail: `Current CPST is $${Math.round(latest)} per outcome.`,
+      detail: `Current CPST is $${latest < 1 ? latest.toFixed(2) : Math.round(latest)} per outcome.`,
       latestCpst: latest,
       priorCpst: null,
       changePct: null,

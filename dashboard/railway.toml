@@ -3,7 +3,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
-watchPatterns = ["/dashboard/**"]
+watchPatterns = ["/dashboard/**", "/api/app/metrics.py", "/api/app/attribution.py"]
 
 [deploy]
 healthcheckPath = "/api/health"

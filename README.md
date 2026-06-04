@@ -9,7 +9,8 @@ Standalone product. Not [Authon](https://github.com/aamirsec6/agent-money) / Age
 | Path | Purpose |
 |------|---------|
 | [`api/`](api/) | FastAPI — ingest, CPST, outcome contracts, GitHub |
-| [`dashboard/`](dashboard/) | Next.js dashboard |
+| [`landing/`](landing/) | Next.js marketing + waitlist (Railway: root `landing`) |
+| [`dashboard/`](dashboard/) | Next.js app dashboard |
 | [`docs/`](docs/) | PRD, moat, Railway, one-pager |
 
 ## Quick start (local)
@@ -31,6 +32,8 @@ npm run dev
 
 Open http://localhost:3001
 
+**Landing:** `cd landing && npm run dev` → http://localhost:3002 · **Dashboard:** `cd dashboard && npm run dev` → http://localhost:3001/overview — see [`landing/RAILWAY.md`](landing/RAILWAY.md) and [`docs/reddit-launch.md`](docs/reddit-launch.md)
+
 **Reports flow:** Integrations → sync → Reports → Generate narrative → Approve → Export PDF
 
 ## Railway
@@ -40,6 +43,7 @@ Use a **dedicated Railway project** (not Authon). See [`docs/railway-project.md`
 | Service | Root directory |
 |---------|----------------|
 | API | `api` |
+| Landing | `landing` |
 | Dashboard | `dashboard` |
 
 ## Define a win

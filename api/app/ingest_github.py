@@ -53,10 +53,13 @@ def ingest_github_merged_prs(
     since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
     inserted = 0
     updated = 0
+    per_repo: dict[str, dict[str, int]] = {}
     headers = github_headers(token)
 
     with httpx.Client(timeout=60.0) as client:
         for repo in repos:
+            repo_inserted = 0
+            repo_updated = 0
             page = 1
             while page <= 10:
                 resp = client.get(
@@ -99,6 +102,7 @@ def ingest_github_merged_prs(
                         existing.raw_json = json.dumps(meta)
                         existing.team_id = team_id
                         updated += 1
+                        repo_updated += 1
                         continue
 
                     db.add(
@@ -117,10 +121,16 @@ def ingest_github_merged_prs(
                         )
                     )
                     inserted += 1
+                    repo_inserted += 1
 
                 if len(pulls) < 100:
                     break
                 page += 1
+            per_repo[repo] = {
+                "inserted": repo_inserted,
+                "updated": repo_updated,
+                "mergedPrs": repo_inserted + repo_updated,
+            }
 
     db.flush()
     return {
@@ -129,4 +139,5 @@ def ingest_github_merged_prs(
         "updated": updated,
         "source": "github",
         "repos": repos,
+        "perRepo": per_repo,
     }

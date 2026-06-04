@@ -40,7 +40,9 @@ export function WinsPanel({
 
       {wins.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">
-          No merged PRs in this period. Merge work on GitHub, then sync integrations.
+          No outcomes in this period for selected repos. Check Settings win type
+          (merged PR vs default-branch commit), merge or push on GitHub, then run
+          full sync on Integrations.
         </p>
       ) : (
         <ul className="mt-4 space-y-3">

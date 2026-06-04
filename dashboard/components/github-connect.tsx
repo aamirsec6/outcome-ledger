@@ -94,8 +94,17 @@ export function GitHubConnectPanel({
         setMessage(syncData.detail || syncData.error || "Sync failed");
         return;
       }
+      const perRepo = syncData.github?.perRepo || syncData.perRepo;
+      const parts = perRepo
+        ? Object.entries(perRepo as Record<string, { inserted?: number; mergedPrs?: number; commits?: number }>)
+            .map(([r, s]) => `${r.split("/").pop()}: ${s.inserted ?? s.mergedPrs ?? s.commits ?? 0}`)
+            .join(", ")
+        : null;
+      const n = syncData.github?.inserted ?? syncData.inserted ?? 0;
       setMessage(
-        `Synced ${syncData.inserted ?? 0} merged PR outcomes from ${selected.length} repo(s).`,
+        parts
+          ? `Synced ${n} outcomes (${parts}). Re-run if you just added a repo.`
+          : `Synced ${n} outcomes from ${selected.length} repo(s).`,
       );
       router.refresh();
     } finally {

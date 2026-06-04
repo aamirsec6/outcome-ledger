@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/cn";
 
 const nav = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/overview", label: "Overview", icon: LayoutDashboard },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/integrations", label: "Integrations", icon: Cable },
   { href: "/reports", label: "Reports", icon: FileText },
@@ -40,8 +40,7 @@ export function Sidebar() {
       </div>
       <nav className="flex flex-1 flex-col gap-0.5">
         {nav.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}

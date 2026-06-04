@@ -19,7 +19,19 @@ export function SyncAllButton() {
         setMessage(data.detail || data.error || "Sync failed");
         return;
       }
-      setMessage("Full sync completed (vendors + GitHub + revert scan).");
+      const gh = data.results?.github || data.github;
+      const perRepo = gh?.perRepo as Record<string, { inserted?: number; mergedPrs?: number; commits?: number }> | undefined;
+      let detail = "Full sync completed (vendors + GitHub + revert scan).";
+      if (perRepo && Object.keys(perRepo).length > 0) {
+        const lines = Object.entries(perRepo).map(([repo, s]) => {
+          const n = s.inserted ?? s.mergedPrs ?? s.commits ?? 0;
+          return `${repo}: ${n} new`;
+        });
+        detail += ` GitHub — ${lines.join("; ")}.`;
+      } else if (gh?.repos?.length) {
+        detail += ` GitHub repos: ${(gh.repos as string[]).join(", ")}.`;
+      }
+      setMessage(detail);
       router.refresh();
     } finally {
       setBusy(false);

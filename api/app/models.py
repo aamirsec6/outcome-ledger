@@ -189,6 +189,48 @@ class ReportRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class WaitlistSignup(Base):
+    """Public waitlist — attribution via UTM / ref for Reddit and campaigns."""
+
+    __tablename__ = "waitlist_signups"
+    __table_args__ = (UniqueConstraint("email", name="uq_waitlist_email"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    email: Mapped[str] = mapped_column(String(256), index=True)
+    name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    role: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    solutions_json: Mapped[str] = mapped_column(Text, default="[]")
+    other_solution: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    session_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    utm_source: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    utm_medium: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    utm_campaign: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    utm_content: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    ref: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    ip_hash: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class WaitlistPageView(Base):
+    """Landing page views — track Reddit / campaign traffic before signup."""
+
+    __tablename__ = "waitlist_page_views"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    path: Mapped[str] = mapped_column(String(256), default="/join")
+    utm_source: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    utm_medium: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    utm_campaign: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    utm_content: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    ref: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    ip_hash: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class CpstSnapshot(Base):
     """Immutable CPST rollup per period — moat: years of comparable history."""
 

@@ -1,0 +1,11 @@
+# Railway service: outcome-ledger-landing
+# Root Directory MUST be: landing
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

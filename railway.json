@@ -24,6 +24,18 @@
         "healthcheckTimeout": 120,
         "restartPolicyType": "ON_FAILURE"
       }
+    },
+    "outcome-ledger-landing": {
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "landing/Dockerfile",
+        "watchPatterns": ["landing/**"]
+      },
+      "deploy": {
+        "healthcheckPath": "/api/health",
+        "healthcheckTimeout": 120,
+        "restartPolicyType": "ON_FAILURE"
+      }
     }
   }
 }

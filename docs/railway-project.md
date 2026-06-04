@@ -13,6 +13,7 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | Service | Root Directory | Public URL |
 |---------|----------------|------------|
 | `outcome-ledger` (API) | `api` | https://outcome-ledger-production.up.railway.app |
+| `outcome-ledger-landing` | `landing` | *(generate domain — marketing + waitlist)* |
 | `outcome-ledger-dashboard` | `dashboard` | https://outcome-ledger-dashboard-production.up.railway.app |
 | `Postgres` | (Railway plugin) | internal |
 
@@ -29,7 +30,17 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | `ANTHROPIC_ADMIN_API_KEY` | `sk-ant-admin...` (optional) |
 | `GITHUB_TOKEN` | PAT (optional) |
 | `GITHUB_REPOS` | `org/repo,org/repo2` |
-| `CORS_ORIGINS` | `https://outcome-ledger-dashboard-production.up.railway.app` |
+| `CORS_ORIGINS` | `https://outcome-ledger-dashboard-production.up.railway.app,https://YOUR-LANDING.up.railway.app` |
+
+### Landing service (`outcome-ledger-landing`)
+
+Root Directory: **`landing`**. See [`landing/RAILWAY.md`](../landing/RAILWAY.md).
+
+| Variable | Value |
+|----------|--------|
+| `OUTCOME_LEDGER_API_URL` | `https://outcome-ledger-production.up.railway.app` |
+| `NEXT_PUBLIC_OUTCOME_LEDGER_API_URL` | same |
+| `NEXT_PUBLIC_DASHBOARD_URL` | `https://outcome-ledger-dashboard-production.up.railway.app` |
 
 ### Dashboard service (`outcome-ledger-dashboard`)
 
@@ -57,6 +68,9 @@ railway up api --path-as-root --detach
 
 railway service link outcome-ledger-dashboard
 railway up dashboard --path-as-root --detach
+
+railway service link outcome-ledger-landing
+railway up landing --path-as-root --detach
 ```
 
 ## Health checks
@@ -64,6 +78,7 @@ railway up dashboard --path-as-root --detach
 ```bash
 curl https://outcome-ledger-production.up.railway.app/health
 curl https://outcome-ledger-dashboard-production.up.railway.app/api/health
+curl https://YOUR-LANDING.up.railway.app/api/health
 ```
 
 ## Why a new project?

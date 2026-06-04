@@ -4,7 +4,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from pydantic import BaseModel
@@ -57,6 +57,13 @@ from app.revert_check import check_reverts
 from app.sync_audit import sync_history
 from app.sync_pipeline import run_full_sync
 from app.team_mapping import list_team_mappings, replace_team_mappings
+from app.waitlist import (
+    create_signup,
+    list_signups,
+    public_waitlist_stats,
+    record_page_view,
+)
+from app.waitlist_notify import handle_signup_notifications
 from app.wins import list_wins, win_definition_for_org
 
 logging.basicConfig(level=logging.INFO)
@@ -101,6 +108,124 @@ def health():
         "production": is_production(),
         "apiKeyRequired": is_production(),
     }
+
+
+class WaitlistViewPayload(BaseModel):
+    sessionId: str
+    path: str = "/join"
+    utmSource: str | None = None
+    utmMedium: str | None = None
+    utmCampaign: str | None = None
+    utmContent: str | None = None
+    ref: str | None = None
+    website: str | None = None
+
+
+class WaitlistSignupPayload(BaseModel):
+    email: str
+    name: str | None = None
+    role: str | None = None
+    company: str | None = None
+    solutions: list[str] = []
+    otherSolution: str | None = None
+    sessionId: str | None = None
+    utmSource: str | None = None
+    utmMedium: str | None = None
+    utmCampaign: str | None = None
+    utmContent: str | None = None
+    ref: str | None = None
+    website: str | None = None
+
+
+def _client_ip(request: Request) -> str | None:
+    forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    if request.client:
+        return request.client.host
+    return None
+
+
+@app.get("/v1/waitlist/stats")
+def waitlist_stats_public():
+    with get_db() as db:
+        return public_waitlist_stats(db)
+
+
+@app.post("/v1/waitlist/view")
+def waitlist_record_view(payload: WaitlistViewPayload, request: Request):
+    if (payload.website or "").strip():
+        return {"recorded": False, "reason": "honeypot"}
+    with get_db() as db:
+        return record_page_view(
+            db,
+            session_id=payload.sessionId,
+            path=payload.path,
+            utm_source=payload.utmSource,
+            utm_medium=payload.utmMedium,
+            utm_campaign=payload.utmCampaign,
+            utm_content=payload.utmContent,
+            ref=payload.ref,
+            user_agent=request.headers.get("user-agent"),
+            ip=_client_ip(request),
+        )
+
+
+@app.post("/v1/waitlist/signup")
+def waitlist_signup(
+    payload: WaitlistSignupPayload,
+    request: Request,
+    background_tasks: BackgroundTasks,
+):
+    if (payload.website or "").strip():
+        raise HTTPException(status_code=400, detail="Invalid submission")
+    with get_db() as db:
+        result = create_signup(
+            db,
+            email=payload.email,
+            name=payload.name,
+            role=payload.role,
+            company=payload.company,
+            solutions=payload.solutions,
+            other_solution=payload.otherSolution,
+            session_id=payload.sessionId,
+            utm_source=payload.utmSource,
+            utm_medium=payload.utmMedium,
+            utm_campaign=payload.utmCampaign,
+            utm_content=payload.utmContent,
+            ref=payload.ref,
+            user_agent=request.headers.get("user-agent"),
+            ip=_client_ip(request),
+        )
+    if not result.get("ok"):
+        if result.get("error") == "invalid_email":
+            raise HTTPException(status_code=400, detail="Invalid email")
+        if result.get("error") == "waitlist_full":
+            raise HTTPException(status_code=409, detail="Waitlist is full")
+        raise HTTPException(status_code=400, detail="Signup failed")
+    if result.get("ok") and not result.get("alreadyRegistered"):
+        stats = result.get("stats") or {}
+        background_tasks.add_task(
+            handle_signup_notifications,
+            email=payload.email.strip().lower(),
+            name=payload.name,
+            role=payload.role,
+            company=payload.company,
+            solutions=payload.solutions,
+            other_solution=payload.otherSolution,
+            utm_source=payload.utmSource,
+            utm_campaign=payload.utmCampaign,
+            ref=payload.ref,
+            already_registered=False,
+            stats=stats,
+        )
+    return result
+
+
+@app.get("/v1/waitlist/signups", dependencies=[Depends(require_api_key)])
+def waitlist_list_signups():
+    with get_db() as db:
+        return {"signups": list_signups(db), "stats": public_waitlist_stats(db)}
 
 
 def _require_cron_secret(

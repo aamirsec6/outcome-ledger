@@ -69,10 +69,12 @@ def ingest_github_default_branch_commits(
     inserted = 0
     updated = 0
     skipped_merge = 0
+    per_repo: dict[str, dict[str, int]] = {}
     headers = github_headers(token)
 
     with httpx.Client(timeout=60.0) as client:
         for repo in repos:
+            repo_inserted = 0
             branch = _repo_default_branch(client, headers, repo)
             page = 1
             while page <= 10:
@@ -149,10 +151,12 @@ def ingest_github_default_branch_commits(
                         )
                     )
                     inserted += 1
+                    repo_inserted += 1
 
                 if len(commits) < 100:
                     break
                 page += 1
+            per_repo[repo] = {"inserted": repo_inserted, "commits": repo_inserted}
 
     db.flush()
     return {
@@ -162,4 +166,5 @@ def ingest_github_default_branch_commits(
         "skippedMergeCommits": skipped_merge,
         "source": "github_commits",
         "repos": repos,
+        "perRepo": per_repo,
     }

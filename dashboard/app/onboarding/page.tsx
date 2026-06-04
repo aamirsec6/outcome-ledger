@@ -12,6 +12,7 @@ type Step = { id: string; label: string; done: boolean };
 type OnboardingStatus = {
   steps?: Step[];
   progress?: { done: number; total: number };
+  requiredProgress?: { done: number; total: number };
   complete?: boolean;
   companyName?: string;
 };
@@ -241,9 +242,26 @@ function OnboardingInner() {
     );
   }
 
-  const doneCount = status?.progress?.done ?? 0;
-  const totalCount = status?.progress?.total ?? STEPS.length;
+  const prog = status?.requiredProgress ?? status?.progress;
+  const doneCount = prog?.done ?? 0;
+  const totalCount = prog?.total ?? STEPS.length;
   const pctDone = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  async function skipSetup() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/tenant/onboarding/skip", { method: "POST" });
+      if (!res.ok) {
+        setError("Could not continue — try again");
+        return;
+      }
+      router.replace(nextPath);
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl px-4 py-10 md:py-14">
@@ -390,9 +408,19 @@ function OnboardingInner() {
           </button>
         </div>
       ) : (
-        <p className="mt-8 text-center text-xs theme-text-dim md:text-left">
-          {doneCount} of {totalCount} steps done — finish setup to unlock Overview.
-        </p>
+        <div className="mt-8 flex flex-col items-center gap-3 md:items-start">
+          <p className="text-center text-xs theme-text-dim md:text-left">
+            {doneCount} of {totalCount} required steps done — finish setup for full CPST, or explore the dashboard first.
+          </p>
+          <button
+            type="button"
+            onClick={skipSetup}
+            disabled={loading}
+            className="text-sm theme-text-muted underline-offset-2 hover:underline disabled:opacity-50"
+          >
+            Continue to dashboard (setup later)
+          </button>
+        </div>
       )}
     </div>
   );

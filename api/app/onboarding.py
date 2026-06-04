@@ -20,12 +20,14 @@ def build_onboarding_status(db: Session, org_id: str) -> dict:
     overview = build_overview(db, org_id, lookback_days=90)
     last_sync = last_sync_run(db, org_id)
 
-    openai_ok = vendor_configured_for_org(db, org_id, "openai")
-    anthropic_ok = vendor_configured_for_org(db, org_id, "anthropic")
-    vendor_ok = openai_ok or anthropic_ok or any(
-        i.get("status") in ("connected", "csv")
-        for i in overview.get("integrations", [])
-        if i.get("id") in ("cursor", "claude-code")
+    vendor_ok = (
+        vendor_configured_for_org(db, org_id, "openai")
+        or vendor_configured_for_org(db, org_id, "anthropic")
+        or any(
+            i.get("status") in ("connected", "csv")
+            for i in overview.get("integrations", [])
+            if i.get("id") in ("cursor", "claude-code")
+        )
     )
 
     steps = [
@@ -41,8 +43,8 @@ def build_onboarding_status(db: Session, org_id: str) -> dict:
         },
         {
             "id": "openai",
-            "label": "Connect OpenAI spend",
-            "done": openai_ok,
+            "label": "Connect spend (OpenAI or other)",
+            "done": vendor_ok,
         },
         {
             "id": "github",
@@ -60,13 +62,18 @@ def build_onboarding_status(db: Session, org_id: str) -> dict:
             "done": last_sync is not None,
         },
     ]
+    required = [s for s in steps if s["id"] != "teams"]
     done = sum(1 for s in steps if s["done"])
+    required_done = sum(1 for s in required if s["done"])
     return {
         "orgId": org_id,
         "companyName": profile.get("companyName") or "",
         "steps": steps,
         "progress": {"done": done, "total": len(steps)},
-        "complete": done == len(steps),
+        "requiredProgress": {"done": required_done, "total": len(required)},
+        # Minimum: company + spend source + GitHub + first sync (team maps optional in Settings)
+        "complete": required_done == len(required),
+        "canSkip": required_done >= 2,
         "connections": connections,
         "vendorConfigured": vendor_ok,
         "attributedSpendPct": overview.get("attributedSpendPct", 0),

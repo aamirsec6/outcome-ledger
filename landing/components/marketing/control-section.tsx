@@ -1,27 +1,49 @@
+import {
+  BarChart3,
+  Eye,
+  FileSignature,
+  GitBranch,
+  Link2,
+  LineChart,
+} from "lucide-react";
+import { InteractiveIconCard } from "./interactive-icon-card";
+
 const CONTROLS = [
   {
     title: "Attribution coverage",
     desc: "See attributed vs unassigned spend by vendor. Team mappings raise board-ready coverage past 80%.",
+    icon: Link2,
+    accent: "cyan" as const,
   },
   {
     title: "Full visibility",
     desc: "Sync runs, outcome events, and contract versions in one audit trail — every dollar traceable.",
+    icon: Eye,
+    accent: "emerald" as const,
   },
   {
     title: "Signed methodology",
     desc: "CFO attestation on active outcome contracts. PDF appendix includes formula version.",
+    icon: FileSignature,
+    accent: "amber" as const,
   },
   {
     title: "Revert detection",
     desc: "Stable outcomes exclude PRs reverted within your window. CPST stays honest.",
+    icon: GitBranch,
+    accent: "cyan" as const,
   },
   {
     title: "Vendor ingest",
     desc: "OpenAI, Anthropic, GitHub, Cursor CSV — no custom agent instrumentation.",
+    icon: BarChart3,
+    accent: "emerald" as const,
   },
   {
     title: "Intuitive trends",
     desc: "Weekly CPST and monthly snapshots. Green when cost per win falls period over period.",
+    icon: LineChart,
+    accent: "emerald" as const,
   },
 ];
 
@@ -41,8 +63,9 @@ export function ControlSection() {
           {CONTROLS.map((c) => (
             <article
               key={c.title}
-              className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 text-left transition hover:border-[var(--border-strong)]"
+              className="group rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 text-left transition hover:border-[var(--border-strong)]"
             >
+              <InteractiveIconCard icon={c.icon} accent={c.accent} />
               <h3 className="font-medium text-white">{c.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
                 {c.desc}

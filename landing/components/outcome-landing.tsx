@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MarketingBackground } from "@/components/marketing/marketing-background";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { HeroResend } from "@/components/marketing/hero-resend";
+import { IconShowcaseRow } from "@/components/marketing/icon-showcase-row";
 import { IntegrateSection } from "@/components/marketing/integrate-section";
 import { DeveloperExperience } from "@/components/marketing/developer-experience";
 import { LayersSection } from "@/components/marketing/layers-section";
@@ -22,6 +23,7 @@ export function OutcomeLanding() {
       <MarketingBackground />
       <MarketingNav spotsRemaining={spotsRemaining} />
       <HeroResend />
+      <IconShowcaseRow />
       <IntegrateSection />
       <DeveloperExperience />
       <LayersSection />

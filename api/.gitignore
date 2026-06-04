@@ -1,0 +1,6 @@
+.venv
+__pycache__
+*.pyc
+outcome_ledger.db
+.env
+*.log

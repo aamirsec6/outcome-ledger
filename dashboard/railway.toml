@@ -1,0 +1,11 @@
+# New Railway service — NOT aware-dashboard, NOT authon-mcp.
+# Root Directory MUST be: dashboard
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "services": {
+    "outcome-ledger-api": {
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "api/Dockerfile"
+      },
+      "deploy": {
+        "healthcheckPath": "/health",
+        "healthcheckTimeout": 120,
+        "restartPolicyType": "ON_FAILURE"
+      }
+    },
+    "outcome-ledger-dashboard": {
+      "build": {
+        "builder": "DOCKERFILE",
+        "dockerfilePath": "dashboard/Dockerfile"
+      },
+      "deploy": {
+        "healthcheckPath": "/api/health",
+        "healthcheckTimeout": 120,
+        "restartPolicyType": "ON_FAILURE"
+      }
+    }
+  }
+}

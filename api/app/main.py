@@ -19,8 +19,11 @@ from app.github_oauth import (
     fetch_github_user,
     get_github_connection,
     github_status,
+    merge_repo_lists,
+    parse_repos_json,
     save_github_connection,
     verify_oauth_state,
+    verify_repo_access,
 )
 from app.ingest_csv import ingest_usage_csv
 from app.ingest_github import ingest_github_merged_prs
@@ -429,6 +432,10 @@ class GitHubReposPayload(BaseModel):
     repos: list[str]
 
 
+class GitHubVerifyRepoPayload(BaseModel):
+    repo: str
+
+
 @app.get("/v1/connect/github")
 def connect_github_start():
     """Redirect user to GitHub OAuth."""
@@ -490,8 +497,24 @@ def connect_github_repos_available():
         row = get_github_connection(db, org_id)
         if row is None:
             raise HTTPException(status_code=404, detail="GitHub not connected")
-        repos = fetch_accessible_repos(row.access_token)
-    return {"repos": repos}
+        listed = fetch_accessible_repos(row.access_token)
+        saved = parse_repos_json(row.repos_json)
+        repos = merge_repo_lists(listed, saved)
+    return {"repos": repos, "count": len(repos)}
+
+
+@app.post("/v1/connect/github/repos/verify", dependencies=[Depends(require_api_key)])
+def connect_github_verify_repo(payload: GitHubVerifyRepoPayload):
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        row = get_github_connection(db, org_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="GitHub not connected")
+        try:
+            repo = verify_repo_access(row.access_token, payload.repo)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+    return {"ok": True, "repo": repo}
 
 
 @app.post("/v1/connect/github/repos", dependencies=[Depends(require_api_key)])
@@ -506,9 +529,16 @@ def connect_github_save_repos(payload: GitHubReposPayload):
         row = get_github_connection(db, org_id)
         if row is None:
             raise HTTPException(status_code=404, detail="GitHub not connected")
-        row.repos_json = json.dumps(repos)
+        verified: list[str] = []
+        for name in repos:
+            try:
+                info = verify_repo_access(row.access_token, name)
+                verified.append(info["full_name"])
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e)) from e
+        row.repos_json = json.dumps(verified)
         db.flush()
-    return {"ok": True, "repos": repos}
+    return {"ok": True, "repos": verified}
 
 
 @app.post("/v1/connect/github/sync", dependencies=[Depends(require_api_key)])

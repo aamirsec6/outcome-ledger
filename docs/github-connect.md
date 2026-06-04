@@ -41,6 +41,15 @@ Redeploy dashboard.
 3. Redirect back → pick repos → **Save repos & sync**
 4. Overview shows merged PR outcomes + CPST
 
+### New repo not in the list?
+
+GitHub OAuth only returns repos you **granted** when you authorized the app. A repo created later (e.g. `outcome-ledger`) may be missing until you:
+
+1. Click **Re-connect GitHub** on Integrations and approve access to the new repo, **or**
+2. Type `owner/repo` in **Add repo** (e.g. `aamirsec6/outcome-ledger`) then **Save repos & sync**
+
+GitHub → **Settings** → **Applications** → **Outcome Ledger** → configure repository access.
+
 ## Endpoints
 
 | Method | Path | Purpose |

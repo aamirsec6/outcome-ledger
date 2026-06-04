@@ -24,6 +24,8 @@ export function GitHubConnectPanel({
   const [selected, setSelected] = useState<string[]>(status.repos || []);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [manualRepo, setManualRepo] = useState("");
 
   const repoOptions = useMemo(() => {
     const names = new Set<string>();
@@ -33,6 +35,40 @@ export function GitHubConnectPanel({
     for (const r of status.repos || []) names.add(r);
     return Array.from(names).sort();
   }, [availableRepos, status.repos]);
+
+  const filteredOptions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return repoOptions;
+    return repoOptions.filter((n) => n.toLowerCase().includes(q));
+  }, [repoOptions, search]);
+
+  async function addManualRepo() {
+    const name = manualRepo.trim();
+    if (!name.includes("/")) {
+      setMessage("Use owner/repo, e.g. aamirsec6/outcome-ledger");
+      return;
+    }
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/github/repos/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo: name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.detail || data.error || "Cannot access repo");
+        return;
+      }
+      const full = data.repo?.full_name || name;
+      setSelected((prev) => (prev.includes(full) ? prev : [...prev, full]));
+      setManualRepo("");
+      setMessage(`Added ${full}. Save & sync when ready.`);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function saveAndSync() {
     if (selected.length === 0) {
@@ -109,14 +145,49 @@ export function GitHubConnectPanel({
           Connected as <span className="font-medium">{status.login}</span>
         </p>
         <p className="text-xs text-slate-500 mt-1">
-          Select repos to track merged PR outcomes
+          Select repos to track merged PR outcomes. New repo missing? Re-connect
+          GitHub below or add by name.
         </p>
+        <a
+          href={connectUrl}
+          className="mt-2 inline-block text-xs text-teal-400 hover:text-teal-300"
+        >
+          Re-connect GitHub (refresh repo access)
+        </a>
+      </div>
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Filter repos…"
+        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={manualRepo}
+          onChange={(e) => setManualRepo(e.target.value)}
+          placeholder="aamirsec6/outcome-ledger"
+          className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+        />
+        <button
+          type="button"
+          onClick={addManualRepo}
+          disabled={busy}
+          className="shrink-0 rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+        >
+          Add repo
+        </button>
       </div>
       <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-slate-800 p-2">
-        {repoOptions.length === 0 ? (
-          <p className="text-sm text-slate-500 p-2">Loading repos…</p>
+        {filteredOptions.length === 0 ? (
+          <p className="text-sm text-slate-500 p-2">
+            {repoOptions.length === 0
+              ? "No repos from GitHub — add manually or re-connect."
+              : "No match — try Add repo above."}
+          </p>
         ) : (
-          repoOptions.map((name) => (
+          filteredOptions.map((name) => (
             <label
               key={name}
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-800"

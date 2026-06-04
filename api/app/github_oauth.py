@@ -119,17 +119,20 @@ def fetch_github_user(token: str) -> dict[str, Any]:
         return resp.json()
 
 
-def fetch_accessible_repos(token: str, *, limit: int = 100) -> list[dict[str, Any]]:
+def fetch_accessible_repos(token: str, *, limit: int = 200) -> list[dict[str, Any]]:
+    """List repos the OAuth token can read (GitHub may omit newly created repos until re-auth)."""
     repos: list[dict[str, Any]] = []
+    seen: set[str] = set()
     page = 1
     with httpx.Client(timeout=60.0) as client:
-        while len(repos) < limit and page <= 5:
+        while len(repos) < limit and page <= 10:
             resp = client.get(
                 f"{GITHUB_API}/user/repos",
                 headers=github_headers(token),
                 params={
                     "affiliation": "owner,collaborator,organization_member",
-                    "sort": "updated",
+                    "sort": "pushed",
+                    "direction": "desc",
                     "per_page": 100,
                     "page": page,
                 },
@@ -139,17 +142,55 @@ def fetch_accessible_repos(token: str, *, limit: int = 100) -> list[dict[str, An
             if not batch:
                 break
             for r in batch:
+                name = r.get("full_name")
+                if not name or name in seen:
+                    continue
+                seen.add(name)
                 repos.append(
                     {
-                        "full_name": r.get("full_name"),
+                        "full_name": name,
                         "private": r.get("private"),
-                        "updated_at": r.get("updated_at"),
+                        "updated_at": r.get("updated_at") or r.get("pushed_at"),
                     }
                 )
             if len(batch) < 100:
                 break
             page += 1
     return repos[:limit]
+
+
+def verify_repo_access(token: str, full_name: str) -> dict[str, Any]:
+    """Check token can read owner/repo (works when user adds a repo not yet in /user/repos)."""
+    full_name = full_name.strip()
+    if "/" not in full_name:
+        raise ValueError("Use owner/repo format, e.g. aamirsec6/outcome-ledger")
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.get(
+            f"{GITHUB_API}/repos/{full_name}",
+            headers=github_headers(token),
+        )
+        if resp.status_code == 404:
+            raise ValueError(
+                f"Cannot access {full_name}. Re-connect GitHub and grant this repo, "
+                "or check the name."
+            )
+        resp.raise_for_status()
+        r = resp.json()
+        return {
+            "full_name": r.get("full_name"),
+            "private": r.get("private"),
+            "updated_at": r.get("updated_at") or r.get("pushed_at"),
+        }
+
+
+def merge_repo_lists(
+    listed: list[dict[str, Any]], extra_full_names: list[str]
+) -> list[dict[str, Any]]:
+    by_name = {r["full_name"]: r for r in listed if r.get("full_name")}
+    for name in extra_full_names:
+        if name and name not in by_name:
+            by_name[name] = {"full_name": name, "private": None, "updated_at": None}
+    return sorted(by_name.values(), key=lambda x: (x.get("full_name") or "").lower())
 
 
 def get_github_connection(db: Session, org_id: str) -> ProviderConnection | None:

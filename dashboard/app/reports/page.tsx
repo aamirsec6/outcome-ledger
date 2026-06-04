@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header";
 import { ReportsPanel } from "@/components/reports-panel";
 import { fetchLatestExecutiveReport, fetchOverview, hasLiveApi } from "@/lib/api";
 import { usd, pct } from "@/lib/format";
@@ -30,21 +31,14 @@ export default async function ReportsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-white">Reports</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Board-ready export · metrics from store · human approval before PDF
-          {live ? (
-            <span className="ml-2 rounded bg-teal-500/20 px-1.5 py-0.5 text-[10px] text-teal-300">
-              live
-            </span>
-          ) : (
-            <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-300">
-              demo
-            </span>
-          )}
-        </p>
-      </header>
+      <PageHeader title="Reports">
+        Board-ready export · metrics from store · human approval before PDF
+        {live ? (
+          <span className="ml-2 rounded bg-good-dim px-1.5 py-0.5 text-[10px]">live</span>
+        ) : (
+          <span className="ml-2 rounded bg-warm-dim px-1.5 py-0.5 text-[10px]">demo</span>
+        )}
+      </PageHeader>
 
       <ReportsPanel
         live={live}

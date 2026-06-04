@@ -62,12 +62,12 @@ export function ConnectWizard({
 
   if (complete) {
     return (
-      <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 px-4 py-3 text-sm text-teal-100">
-        <p className="font-medium text-white">Setup complete</p>
-        <p className="mt-1 text-slate-400">
+      <div className="rounded-lg bg-good-dim px-4 py-3 text-sm">
+        <p className="theme-heading font-medium">Setup complete</p>
+        <p className="mt-1 theme-text-muted">
           Integrations, team mappings, and sync are in place. Generate a report
           on the{" "}
-          <Link href="/reports" className="text-teal-400 hover:underline">
+          <Link href="/reports" className="theme-accent hover:underline">
             Reports
           </Link>{" "}
           page.
@@ -77,10 +77,10 @@ export function ConnectWizard({
   }
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+    <section className="theme-panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-white">Connect wizard</h2>
-        <span className="text-xs text-slate-500">
+        <h2 className="theme-heading text-sm font-medium">Connect wizard</h2>
+        <span className="text-xs theme-text-dim">
           {doneCount}/{steps.length} complete
         </span>
       </div>
@@ -92,14 +92,14 @@ export function ConnectWizard({
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
                 step.done
-                  ? "text-slate-400"
-                  : "bg-slate-800/60 text-white hover:bg-slate-800",
+                  ? "theme-text-dim"
+                  : "theme-inset theme-heading hover:opacity-90",
               )}
             >
               {step.done ? (
-                <CheckCircle2 className="h-4 w-4 text-teal-400" />
+                <CheckCircle2 className="theme-icon h-4 w-4" />
               ) : (
-                <Circle className="h-4 w-4 text-slate-600" />
+                <Circle className="h-4 w-4 theme-text-dim" />
               )}
               <span className="text-sm">{step.label}</span>
             </Link>

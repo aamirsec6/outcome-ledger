@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Target } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export type WinOption = {
   id: string;
@@ -66,12 +67,12 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
         ];
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+    <section className="theme-panel p-5">
       <div className="flex items-start gap-3">
-        <Target className="mt-0.5 h-5 w-5 shrink-0 text-teal-400" />
+        <Target className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-white">Define a win</h3>
-          <p className="mt-1 text-sm text-slate-400">
+          <h3 className="theme-heading text-base font-medium">Define a win</h3>
+          <p className="mt-1 text-sm theme-text-muted">
             Choose what counts as an accepted outcome for CPST. Published as a new outcome
             contract version; CFO can re-sign on the Outcome contract page.
           </p>
@@ -82,11 +83,10 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
         {options.map((opt) => (
           <label
             key={opt.id}
-            className={`flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors ${
-              winType === opt.id
-                ? "border-teal-500/50 bg-teal-500/10"
-                : "border-slate-800 hover:border-slate-700"
-            }`}
+            className={cn(
+              "theme-option flex cursor-pointer gap-3 p-3",
+              winType === opt.id && "theme-option-selected",
+            )}
           >
             <input
               type="radio"
@@ -94,20 +94,22 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
               value={opt.id}
               checked={winType === opt.id}
               onChange={() => setWinType(opt.id)}
-              className="mt-1"
+              className="mt-1 accent-[var(--accent)]"
             />
             <div>
-              <p className="text-sm font-medium text-white">{opt.label}</p>
-              <p className="mt-0.5 text-xs text-slate-400">{opt.description}</p>
+              <p className="text-sm font-medium theme-heading">{opt.label}</p>
+              <p className="mt-0.5 text-xs theme-text-muted">{opt.description}</p>
             </div>
           </label>
         ))}
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-slate-500">{initial.summary}</p>
+      {initial.summary ? (
+        <p className="mt-3 text-xs leading-relaxed theme-text-muted">{initial.summary}</p>
+      ) : null}
 
       {initial.contract ? (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs theme-text-dim">
           Active contract v{initial.contract.version}
           {initial.contract.cfoApproved ? " · CFO signed" : " · awaiting CFO sign-off"}
         </p>
@@ -118,22 +120,22 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
           type="button"
           disabled={busy || winType === initial.winType}
           onClick={save}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
+          className="theme-btn-primary"
         >
           {busy ? (
-            <Loader2 className="inline h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             "Save & publish contract"
           )}
         </button>
         {winType === "default_branch_commit" ? (
-          <span className="text-xs text-amber-300/90">
+          <span className="text-xs bg-warm-dim rounded px-2 py-1">
             Then run Sync — ingests master/main commits (skips PR merge commits).
           </span>
         ) : null}
       </div>
 
-      {message ? <p className="mt-3 text-sm text-teal-300">{message}</p> : null}
-    </div>
+      {message ? <p className="theme-message-success mt-3">{message}</p> : null}
+    </section>
   );
 }

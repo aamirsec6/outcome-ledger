@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { FileDown, RefreshCw, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 type Report = {
   id: string;
@@ -75,15 +76,12 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
               type="button"
               onClick={generate}
               disabled={busy}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+              className="theme-btn-secondary"
             >
-              <RefreshCw className={`h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+              <RefreshCw className={cn("h-4 w-4", busy && "animate-spin")} />
               Generate narrative
             </button>
-            <a
-              href="/api/reports/export"
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-            >
+            <a href="/api/reports/export" className="theme-btn-secondary">
               <FileDown className="h-4 w-4" />
               CSV
             </a>
@@ -95,11 +93,10 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
                   setError("Approve the narrative before PDF export");
                 }
               }}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
-                approved
-                  ? "bg-teal-600 text-white hover:bg-teal-500"
-                  : "cursor-not-allowed bg-teal-600/40 text-white/70"
-              }`}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+                approved ? "theme-btn-primary" : "theme-btn-primary cursor-not-allowed opacity-50",
+              )}
               title={approved ? "Download board pack PDF" : "Approve narrative first"}
             >
               <FileDown className="h-4 w-4" />
@@ -107,43 +104,42 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
             </a>
           </>
         ) : (
-          <p className="text-xs text-amber-400">
+          <p className="text-xs bg-warm-dim rounded px-2 py-1">
             Connect OUTCOME_LEDGER_API_URL for live reports
           </p>
         )}
         {report ? (
           <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              approved
-                ? "bg-teal-500/15 text-teal-300"
-                : "bg-amber-500/15 text-amber-300"
-            }`}
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-medium",
+              approved ? "bg-good-dim" : "bg-warm-dim",
+            )}
           >
             {approved ? `Approved · ${report.approvedBy}` : "Draft — needs approval"}
           </span>
         ) : null}
         {report?.model ? (
-          <span className="text-xs text-slate-500">Model: {report.model}</span>
+          <span className="text-xs theme-text-dim">Model: {report.model}</span>
         ) : null}
       </div>
 
       {live && report && !approved ? (
-        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <div className="theme-panel flex flex-wrap items-end gap-2 p-4">
+          <label className="theme-label flex flex-col gap-1 text-xs">
             Approver name (required for PDF)
             <input
               type="text"
               value={signerName}
               onChange={(e) => setSignerName(e.target.value)}
               placeholder="Jane CFO"
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+              className="theme-input"
             />
           </label>
           <button
             type="button"
             onClick={approve}
             disabled={busy}
-            className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
+            className="theme-btn-primary"
           >
             <ShieldCheck className="h-4 w-4" />
             Approve for export
@@ -152,10 +148,10 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
       ) : null}
 
       {error ? (
-        <p className="text-sm text-amber-400">{error}</p>
+        <p className="text-sm theme-bad">{error}</p>
       ) : null}
 
-      <pre className="whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-900/60 p-5 text-sm leading-relaxed text-slate-300">
+      <pre className="theme-panel whitespace-pre-wrap p-5 text-sm leading-relaxed theme-text-muted">
         {narrative}
       </pre>
     </div>

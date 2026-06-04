@@ -3,6 +3,7 @@ import {
   OutcomeContractPanel,
   type OutcomeContract,
 } from "@/components/outcome-contract-panel";
+import { PageHeader } from "@/components/page-header";
 import { fetchContractMoat, hasLiveApi } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -18,18 +19,15 @@ export default async function ContractsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold text-white">Outcome contract</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Versioned definition of a win · CFO sign-off · immutable CPST history
-        </p>
-      </header>
+      <PageHeader title="Outcome contract">
+        Versioned definition of a win · CFO sign-off · immutable CPST history
+      </PageHeader>
 
       <OutcomeContractPanel contract={contract} draftVersions={drafts} />
 
-      <section className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-        <h3 className="font-medium text-white">CPST history (monthly)</h3>
-        <p className="mt-1 text-sm text-slate-400">
+      <section className="theme-panel p-5">
+        <h3 className="theme-heading text-base font-medium">CPST history (monthly)</h3>
+        <p className="mt-1 text-sm theme-text-muted">
           Snapshots recorded after each sync. Comparable month-over-month once you have a few
           cycles — switching vendors means re-trust, not a weekend migration.
         </p>
@@ -37,9 +35,9 @@ export default async function ContractsPage() {
           <CpstHistoryChart data={moat.history || []} />
         </div>
         {(moat.history || []).length > 0 ? (
-          <table className="mt-4 w-full text-left text-xs text-slate-400">
+          <table className="theme-table mt-4 w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-500">
+              <tr>
                 <th className="py-2 pr-4">Period</th>
                 <th className="py-2 pr-4">Contract</th>
                 <th className="py-2 pr-4">Outcomes</th>
@@ -48,11 +46,11 @@ export default async function ContractsPage() {
             </thead>
             <tbody>
               {[...(moat.history || [])].reverse().map((row) => (
-                <tr key={row.period} className="border-b border-slate-800/50">
-                  <td className="py-2 pr-4 text-slate-300">{row.period}</td>
+                <tr key={row.period}>
+                  <td className="py-2 pr-4 theme-heading">{row.period}</td>
                   <td className="py-2 pr-4">v{row.contractVersion || "—"}</td>
                   <td className="py-2 pr-4">{row.stableOutcomes}</td>
-                  <td className="py-2 text-teal-300">${row.cpstUsd}</td>
+                  <td className="py-2 theme-accent">${row.cpstUsd}</td>
                 </tr>
               ))}
             </tbody>

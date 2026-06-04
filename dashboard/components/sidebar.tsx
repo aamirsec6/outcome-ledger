@@ -55,19 +55,8 @@ export function Sidebar() {
               href={href}
               className={cn(
                 "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-                active ? "bg-accent-dim theme-accent" : "theme-text-muted",
+                active ? "bg-accent-dim theme-accent" : "theme-nav-link",
               )}
-              style={
-                active
-                  ? undefined
-                  : { color: "var(--text-muted)" }
-              }
-              onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = "var(--bg-hover)";
-              }}
-              onMouseLeave={(e) => {
-                if (!active) e.currentTarget.style.background = "";
-              }}
             >
               <Icon className="h-4 w-4" />
               {label}

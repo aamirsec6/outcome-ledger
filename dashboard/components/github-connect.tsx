@@ -114,10 +114,10 @@ export function GitHubConnectPanel({
 
   if (!status.oauth_configured && !status.connected) {
     return (
-      <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+      <p className="rounded-lg bg-warm-dim px-4 py-3 text-sm">
         GitHub OAuth is not configured on the API yet. Add{" "}
-        <code className="text-xs">GITHUB_OAUTH_CLIENT_ID</code> and{" "}
-        <code className="text-xs">GITHUB_OAUTH_CLIENT_SECRET</code> on the API
+        <code className="theme-code">GITHUB_OAUTH_CLIENT_ID</code> and{" "}
+        <code className="theme-code">GITHUB_OAUTH_CLIENT_SECRET</code> on the API
         service, then create a GitHub OAuth App.
       </p>
     );
@@ -125,12 +125,12 @@ export function GitHubConnectPanel({
 
   if (!status.connected) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+      <section className="theme-panel p-5">
         <div className="flex items-center gap-3">
-          <Github className="h-8 w-8 text-white" />
+          <Github className="theme-icon h-8 w-8 shrink-0" />
           <div>
-            <h2 className="font-medium text-white">Connect GitHub</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="theme-heading text-base font-medium">Connect GitHub</h2>
+            <p className="text-sm theme-text-muted">
               Sign in with GitHub — we fetch merged PRs as outcomes. No PAT
               copy-paste.
             </p>
@@ -138,29 +138,27 @@ export function GitHubConnectPanel({
         </div>
         <a
           href={connectUrl}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"
+          className="theme-btn-primary mt-4"
+          style={{ background: "var(--text)", color: "var(--bg-card)" }}
         >
           <Github className="h-4 w-4" />
           Connect with GitHub
         </a>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="rounded-xl border border-teal-500/30 bg-slate-900/50 p-5 space-y-4">
+    <section className="theme-panel space-y-4 border-[color-mix(in_srgb,var(--accent)_35%,transparent)] p-5">
       <div>
-        <p className="text-sm text-teal-300">
+        <p className="text-sm theme-accent">
           Connected as <span className="font-medium">{status.login}</span>
         </p>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="mt-1 text-xs theme-text-dim">
           Select repos to track merged PR outcomes. New repo missing? Re-connect
           GitHub below or add by name.
         </p>
-        <a
-          href={connectUrl}
-          className="mt-2 inline-block text-xs text-teal-400 hover:text-teal-300"
-        >
+        <a href={connectUrl} className="theme-accent mt-2 inline-block text-xs hover:underline">
           Re-connect GitHub (refresh repo access)
         </a>
       </div>
@@ -169,7 +167,7 @@ export function GitHubConnectPanel({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Filter repos…"
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+        className="theme-input"
       />
       <div className="flex gap-2">
         <input
@@ -177,20 +175,20 @@ export function GitHubConnectPanel({
           value={manualRepo}
           onChange={(e) => setManualRepo(e.target.value)}
           placeholder="aamirsec6/outcome-ledger"
-          className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+          className="theme-input min-w-0 flex-1"
         />
         <button
           type="button"
           onClick={addManualRepo}
           disabled={busy}
-          className="shrink-0 rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          className="theme-btn-secondary shrink-0"
         >
           Add repo
         </button>
       </div>
-      <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-slate-800 p-2">
+      <div className="theme-inset max-h-48 space-y-1 overflow-y-auto p-2">
         {filteredOptions.length === 0 ? (
-          <p className="text-sm text-slate-500 p-2">
+          <p className="p-2 text-sm theme-text-muted">
             {repoOptions.length === 0
               ? "No repos from GitHub — add manually or re-connect."
               : "No match — try Add repo above."}
@@ -199,7 +197,7 @@ export function GitHubConnectPanel({
           filteredOptions.map((name) => (
             <label
               key={name}
-              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm theme-text-muted hover:bg-[var(--bg-hover)]"
             >
               <input
                 type="checkbox"
@@ -211,7 +209,7 @@ export function GitHubConnectPanel({
                       : prev.filter((x) => x !== name),
                   );
                 }}
-                className="rounded border-slate-600"
+                className="accent-[var(--accent)]"
               />
               {name}
             </label>
@@ -222,12 +220,12 @@ export function GitHubConnectPanel({
         type="button"
         onClick={saveAndSync}
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
+        className="theme-btn-primary"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Save repos & sync
       </button>
-      {message ? <p className="text-sm text-slate-400">{message}</p> : null}
-    </div>
+      {message ? <p className="theme-message">{message}</p> : null}
+    </section>
   );
 }

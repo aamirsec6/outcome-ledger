@@ -1,4 +1,5 @@
 import { OrgProfilePanel } from "@/components/org-profile-panel";
+import { PageHeader } from "@/components/page-header";
 import { ThemeSettings } from "@/components/theme-settings";
 import { TeamMappingsPanel } from "@/components/team-mappings";
 import { WinDefinitionPanel } from "@/components/win-definition-panel";
@@ -28,29 +29,22 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold" style={{ color: "var(--text)" }}>
-          Settings
-        </h1>
-        <p className="mt-1 text-sm theme-text-muted">
-          Appearance · define a win · team attribution · CPST v1.0 · scheduled sync
-        </p>
-      </header>
+      <PageHeader title="Settings">
+        Appearance · define a win · team attribution · CPST v1.0 · scheduled sync
+      </PageHeader>
       <ThemeSettings />
       <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
       <SyncAllButton />
       <TeamMappingsPanel initialMappings={mappings} />
-      <div className="theme-panel rounded-xl p-4 text-sm theme-text-muted">
-        <p className="font-medium" style={{ color: "var(--text)" }}>
-          Cron (Railway)
-        </p>
+      <section className="theme-panel p-4 text-sm theme-text-muted">
+        <p className="theme-heading font-medium">Cron (Railway)</p>
         <p className="mt-2">
-          POST <code className="text-xs theme-accent">/v1/cron/sync</code> daily with header{" "}
-          <code className="text-xs">X-Cron-Secret</code>. Set{" "}
-          <code className="text-xs">OUTCOME_STABLE_DAYS=7</code> for production (0 = pilot).
+          POST <code className="theme-code">/v1/cron/sync</code> daily with header{" "}
+          <code className="theme-code">X-Cron-Secret</code>. Set{" "}
+          <code className="theme-code">OUTCOME_STABLE_DAYS=7</code> for production (0 = pilot).
         </p>
-      </div>
+      </section>
     </div>
   );
 }

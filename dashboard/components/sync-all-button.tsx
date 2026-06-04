@@ -39,9 +39,9 @@ export function SyncAllButton() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-      <h3 className="font-medium text-white">Enterprise sync</h3>
-      <p className="mt-1 text-sm text-slate-400">
+    <section className="theme-panel p-5">
+      <h3 className="theme-heading text-base font-medium">Enterprise sync</h3>
+      <p className="mt-1 text-sm theme-text-muted">
         Pull OpenAI, Anthropic, GitHub, and run revert detection. Logged in sync
         history.
       </p>
@@ -49,7 +49,7 @@ export function SyncAllButton() {
         type="button"
         onClick={run}
         disabled={busy}
-        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
+        className="theme-btn-primary mt-3"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -58,7 +58,7 @@ export function SyncAllButton() {
         )}
         Run full sync
       </button>
-      {message ? <p className="mt-2 text-sm text-teal-300">{message}</p> : null}
-    </div>
+      {message ? <p className="theme-message mt-2">{message}</p> : null}
+    </section>
   );
 }

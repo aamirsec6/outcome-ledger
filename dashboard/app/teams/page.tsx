@@ -1,5 +1,6 @@
 import { AttributionBanner } from "@/components/attribution-banner";
 import { MetricCard } from "@/components/metric-card";
+import { PageHeader } from "@/components/page-header";
 import { fetchOverview } from "@/lib/api";
 import { attributionInsight } from "@/lib/chart-insights";
 import { pct, usd } from "@/lib/format";
@@ -11,14 +12,9 @@ export default async function TeamsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold" style={{ color: "var(--text)" }}>
-          Teams
-        </h1>
-        <p className="mt-1 text-sm theme-text-muted">
-          Compare cost per accepted outcome by engineering team
-        </p>
-      </header>
+      <PageHeader title="Teams">
+        Compare cost per accepted outcome by engineering team
+      </PageHeader>
 
       <AttributionBanner attributedSpendPct={attributedSpendPct} />
 

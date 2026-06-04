@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExternalLink, Trophy } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 export type Win = {
   id: string;
@@ -16,10 +17,10 @@ export type Win = {
   countsTowardCpst?: boolean;
 };
 
-const statusStyle: Record<string, string> = {
-  accepted: "bg-teal-500/15 text-teal-300",
-  pending_stable: "bg-amber-500/15 text-amber-300",
-  reverted: "bg-red-500/15 text-red-300",
+const statusClass: Record<string, string> = {
+  accepted: "bg-good-dim",
+  pending_stable: "bg-warm-dim",
+  reverted: "bg-bad-dim",
 };
 
 export function WinsPanel({
@@ -31,7 +32,6 @@ export function WinsPanel({
 }: {
   winDefinition: string;
   wins: Win[];
-  /** Max items to render (overview uses 5). Omit to show all. */
   limit?: number;
   totalCount?: number;
   compact?: boolean;
@@ -42,62 +42,62 @@ export function WinsPanel({
   const hidden = total > shown.length;
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <section className="theme-panel p-5">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2 min-w-0">
-          <Trophy className="mt-0.5 h-5 w-5 shrink-0 text-teal-400" />
+        <div className="flex min-w-0 items-start gap-2">
+          <Trophy className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
           <div className="min-w-0">
-            <h2 className="text-sm font-medium text-slate-300">Wins — what got better</h2>
+            <h2 className="theme-heading text-sm font-medium">Wins — what got better</h2>
             {!compact ? (
-              <p className="mt-1 text-xs leading-relaxed text-slate-500 line-clamp-2">
+              <p className="mt-1 line-clamp-2 text-xs leading-relaxed theme-text-muted">
                 {winDefinition}
               </p>
             ) : null}
           </div>
         </div>
         {hidden ? (
-          <p className="shrink-0 text-xs text-slate-500">
+          <p className="shrink-0 text-xs theme-text-dim">
             {shown.length} of {total} recent
           </p>
         ) : null}
       </div>
 
       {wins.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="mt-4 text-sm theme-text-muted">
           No outcomes in this period for selected repos. Check Settings win type
           (merged PR vs default-branch commit), merge or push on GitHub, then run
           full sync on Integrations.
         </p>
       ) : (
         <>
-          <ul className={`mt-3 space-y-2 ${compact ? "" : "space-y-3"}`}>
+          <ul className={cn("mt-3", compact ? "space-y-2" : "space-y-3")}>
             {shown.map((w) => (
               <li
                 key={w.id}
-                className={`rounded-lg border border-slate-800 bg-slate-950/60 ${
-                  compact ? "px-3 py-2" : "px-4 py-3"
-                }`}
+                className={cn("theme-inset", compact ? "px-3 py-2" : "px-4 py-3")}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase ${
-                      statusStyle[w.status] || "bg-slate-800 text-slate-400"
-                    }`}
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase",
+                      statusClass[w.status] || "theme-badge-neutral",
+                    )}
                   >
                     {w.status.replace("_", " ")}
                   </span>
                   {w.teamId && !compact ? (
-                    <span className="text-xs text-slate-500">team {w.teamId}</span>
+                    <span className="text-xs theme-text-dim">team {w.teamId}</span>
                   ) : null}
                 </div>
                 <p
-                  className={`mt-1 font-medium text-white ${
-                    compact ? "text-xs line-clamp-2" : "text-sm"
-                  }`}
+                  className={cn(
+                    "theme-heading mt-1 font-medium",
+                    compact ? "line-clamp-2 text-xs" : "text-sm",
+                  )}
                 >
                   {w.winSummary}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500 truncate">
+                <p className="mt-0.5 truncate text-xs theme-text-dim">
                   {w.repo}
                   {w.prNumber ? ` #${w.prNumber}` : ""}
                   {w.mergedAt ? ` · ${w.mergedAt.slice(0, 10)}` : ""}
@@ -107,7 +107,7 @@ export function WinsPanel({
                     href={w.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-xs text-teal-400 hover:text-teal-300"
+                    className="theme-accent mt-2 inline-flex items-center gap-1 text-xs hover:underline"
                   >
                     View on GitHub
                     <ExternalLink className="h-3 w-3" />
@@ -117,9 +117,9 @@ export function WinsPanel({
             ))}
           </ul>
           {hidden ? (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs theme-text-dim">
               {total} stable outcomes in period — showing latest {shown.length}.{" "}
-              <Link href="/integrations" className="text-teal-400 hover:text-teal-300">
+              <Link href="/integrations" className="theme-accent hover:underline">
                 Sync
               </Link>{" "}
               updates the list.

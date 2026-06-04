@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle, Upload } from "lucide-react";
 import { ConnectWizard } from "@/components/connect-wizard";
 import { GitHubConnectPanel } from "@/components/github-connect";
+import { PageHeader } from "@/components/page-header";
 import { SpendCsvUpload } from "@/components/spend-csv-upload";
 import { SyncAllButton } from "@/components/sync-all-button";
 import { fetchOverview, fetchTeamMappings } from "@/lib/api";
@@ -39,17 +40,14 @@ export default async function IntegrationsPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-white">Integrations</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Connect tools to ingest AI spend and engineering outcomes
-        </p>
+      <PageHeader title="Integrations">
+        Connect tools to ingest AI spend and engineering outcomes
         {params.github === "connected" && params.login ? (
-          <p className="mt-2 text-sm text-teal-400">
+          <span className="mt-2 block theme-accent">
             GitHub connected as {params.login}. Select repos below.
-          </p>
+          </span>
         ) : null}
-      </header>
+      </PageHeader>
 
       <ConnectWizard
         integrations={integrations}
@@ -83,24 +81,24 @@ export default async function IntegrationsPage({
         {others.map((i) => (
           <li
             key={i.id}
-            className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3"
+            className="theme-panel flex items-center justify-between px-4 py-3"
           >
             <div className="flex items-center gap-3">
               {i.status === "connected" ? (
-                <CheckCircle2 className="h-5 w-5 text-teal-400" />
+                <CheckCircle2 className="theme-icon h-5 w-5" />
               ) : i.status === "csv" ? (
-                <Upload className="h-5 w-5 text-amber-400" />
+                <Upload className="h-5 w-5" style={{ color: "var(--warm)" }} />
               ) : (
-                <Circle className="h-5 w-5 text-slate-600" />
+                <Circle className="h-5 w-5 theme-text-dim" />
               )}
-              <span className="font-medium text-white">{i.name}</span>
+              <span className="theme-heading font-medium">{i.name}</span>
             </div>
             <span
               className={cn(
                 "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                i.status === "connected" && "bg-teal-500/15 text-teal-300",
-                i.status === "csv" && "bg-amber-500/15 text-amber-300",
-                i.status === "pending" && "bg-slate-800 text-slate-500",
+                i.status === "connected" && "bg-good-dim",
+                i.status === "csv" && "bg-warm-dim",
+                i.status === "pending" && "theme-badge-neutral",
               )}
             >
               {statusLabel[i.status]}

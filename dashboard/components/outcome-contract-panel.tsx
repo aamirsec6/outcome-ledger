@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, FileSignature, Loader2, ScrollText } from "lucide-react";
-
 export type OutcomeContract = {
   id: string;
   version: string;
@@ -113,7 +112,7 @@ export function OutcomeContractPanel({
 
   if (!contract) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-sm text-slate-400">
+      <div className="theme-panel p-4 text-sm theme-text-muted">
         Connect the API to load your outcome contract.
       </div>
     );
@@ -123,76 +122,74 @@ export function OutcomeContractPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+      <section className="theme-panel p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <ScrollText className="mt-0.5 h-5 w-5 shrink-0 text-teal-400" />
+            <ScrollText className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <h3 className="font-medium text-white">
+              <h3 className="theme-heading text-base font-medium">
                 {contract.title} · v{contract.version}
               </h3>
-              <p className="mt-1 text-xs uppercase tracking-wide text-slate-500">
+              <p className="mt-1 text-xs uppercase tracking-wide theme-text-dim">
                 {contract.status} · CPST metric v{contract.metricVersion || "1.0"}
               </p>
             </div>
           </div>
           {contract.cfoApproved ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/15 px-2.5 py-1 text-xs text-teal-300">
+            <span className="inline-flex items-center gap-1 rounded-full bg-good-dim px-2.5 py-1 text-xs">
               <CheckCircle2 className="h-3.5 w-3.5" />
               CFO signed
             </span>
           ) : (
-            <span className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs text-amber-300">
+            <span className="rounded-full bg-warm-dim px-2.5 py-1 text-xs">
               Awaiting CFO sign-off
             </span>
           )}
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-slate-300">{contract.summary}</p>
+        <p className="mt-3 text-sm leading-relaxed theme-text-muted">{contract.summary}</p>
         {outcome ? (
-          <p className="mt-2 text-xs text-slate-500">
-            <span className="text-slate-400">{outcome.label}:</span> {outcome.acceptedWhen}
+          <p className="mt-2 text-xs theme-text-dim">
+            <span className="theme-text-muted">{outcome.label}:</span> {outcome.acceptedWhen}
           </p>
         ) : null}
         {contract.spec?.formula?.expression ? (
-          <p className="mt-2 font-mono text-xs text-teal-400/90">
-            {contract.spec.formula.expression}
-          </p>
+          <p className="theme-accent mt-2 font-mono text-xs">{contract.spec.formula.expression}</p>
         ) : null}
         {contract.approval ? (
-          <div className="mt-4 rounded-lg border border-teal-500/20 bg-teal-500/5 p-3 text-sm">
-            <p className="flex items-center gap-2 font-medium text-teal-200">
+          <div className="bg-accent-dim mt-4 rounded-lg p-3 text-sm">
+            <p className="theme-heading flex items-center gap-2 font-medium">
               <FileSignature className="h-4 w-4" />
               {contract.approval.signerName}
               {contract.approval.signerTitle ? ` · ${contract.approval.signerTitle}` : ""}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs theme-text-dim">
               Signed {contract.approval.signedAt ? new Date(contract.approval.signedAt).toLocaleString() : ""}
             </p>
           </div>
         ) : null}
-      </div>
+      </section>
 
       {!contract.cfoApproved && contract.status === "active" ? (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <h4 className="text-sm font-medium text-white">CFO sign-off</h4>
-          <p className="mt-1 text-xs text-slate-400">
+        <section className="theme-panel p-5">
+          <h4 className="theme-heading text-sm font-medium">CFO sign-off</h4>
+          <p className="mt-1 text-xs theme-text-muted">
             Finance attests this is how your org measures accepted outcomes for board reporting.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <input
-              className="min-w-[160px] flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-white"
+              className="theme-input theme-input-sm min-w-[160px] flex-1"
               placeholder="Signer name"
               value={signerName}
               onChange={(e) => setSignerName(e.target.value)}
             />
             <input
-              className="w-28 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-white"
+              className="theme-input theme-input-sm w-28"
               placeholder="Title"
               value={signerTitle}
               onChange={(e) => setSignerTitle(e.target.value)}
             />
             <input
-              className="min-w-[180px] flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-white"
+              className="theme-input theme-input-sm min-w-[180px] flex-1"
               placeholder="Email (optional)"
               value={signerEmail}
               onChange={(e) => setSignerEmail(e.target.value)}
@@ -202,16 +199,16 @@ export function OutcomeContractPanel({
             type="button"
             disabled={busy}
             onClick={() => cfoApprove(contract.id)}
-            className="mt-3 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50"
+            className="theme-btn-primary mt-3"
           >
             {busy ? <Loader2 className="inline h-4 w-4 animate-spin" /> : "Record CFO approval"}
           </button>
-        </div>
+        </section>
       ) : null}
 
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-        <h4 className="text-sm font-medium text-white">New contract version</h4>
-        <p className="mt-1 text-xs text-slate-400">
+      <section className="theme-panel p-5">
+        <h4 className="theme-heading text-sm font-medium">New contract version</h4>
+        <p className="mt-1 text-xs theme-text-muted">
           Changing how you define a win creates a new version. Prior versions stay in the audit trail;
           CPST history is tagged with the contract version active each month.
         </p>
@@ -220,7 +217,7 @@ export function OutcomeContractPanel({
             type="button"
             disabled={busy || Boolean(draft)}
             onClick={createDraft}
-            className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            className="theme-btn-ghost"
           >
             Create draft from active
           </button>
@@ -229,15 +226,15 @@ export function OutcomeContractPanel({
               type="button"
               disabled={busy}
               onClick={() => publishDraft(draft.id)}
-              className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm text-white hover:bg-slate-600 disabled:opacity-50"
+              className="theme-btn-secondary"
             >
               Publish draft v{draft.version}
             </button>
           ) : null}
         </div>
-      </div>
+      </section>
 
-      {message ? <p className="text-sm text-teal-300">{message}</p> : null}
+      {message ? <p className="theme-message-success text-sm">{message}</p> : null}
     </div>
   );
 }

@@ -13,13 +13,11 @@ export function ThemeSettings() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <section className="theme-panel rounded-xl p-5 space-y-4">
+    <section className="theme-panel space-y-4 p-5">
       <div className="flex items-center gap-3">
-        <Monitor className="h-5 w-5 theme-accent" />
+        <Monitor className="theme-icon h-5 w-5 shrink-0" />
         <div>
-          <h2 className="font-medium" style={{ color: "var(--text)" }}>
-            Appearance
-          </h2>
+          <h2 className="theme-heading text-base font-medium">Appearance</h2>
           <p className="text-sm theme-text-muted">
             Match the marketing site — emerald accents, clean cards
           </p>
@@ -34,8 +32,8 @@ export function ThemeSettings() {
             className={cn(
               "flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
               theme === id
-                ? "bg-accent-dim theme-accent"
-                : "theme-card theme-text-muted hover:opacity-90",
+                ? "theme-option-selected theme-accent"
+                : "theme-option theme-text-muted",
             )}
           >
             <Icon className="h-4 w-4" />

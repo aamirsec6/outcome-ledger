@@ -1,5 +1,7 @@
 import type { Overview } from "@/lib/mock-metrics";
 import { outcomeLedgerHeaders } from "@/lib/api-headers";
+import { emptyOverview } from "@/lib/empty-overview";
+import { isClerkEnabled } from "@/lib/clerk-config";
 import { getMockOverview } from "@/lib/mock-metrics";
 
 const API_URL = (
@@ -242,6 +244,7 @@ export async function fetchAttribution(): Promise<AttributionBreakdown | null> {
 
 export async function fetchOverview(): Promise<Overview & { dataSource?: string }> {
   if (!API_URL) {
+    if (isClerkEnabled()) return emptyOverview();
     return { ...getMockOverview(), dataSource: "mock" };
   }
   try {
@@ -251,12 +254,18 @@ export async function fetchOverview(): Promise<Overview & { dataSource?: string 
     });
     if (!res.ok) {
       console.warn("Outcome Ledger API error", res.status);
+      if (isClerkEnabled()) {
+        return { ...emptyOverview(), dataSource: "setup-required" };
+      }
       return { ...getMockOverview(), dataSource: "mock-fallback" };
     }
     const data = await res.json();
     return { ...data, dataSource: data.dataSource || "live" };
   } catch (e) {
     console.warn("Outcome Ledger API unreachable", e);
+    if (isClerkEnabled()) {
+      return { ...emptyOverview(), dataSource: "setup-required" };
+    }
     return { ...getMockOverview(), dataSource: "mock-fallback" };
   }
 }

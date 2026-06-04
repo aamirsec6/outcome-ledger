@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -18,7 +17,7 @@ type OnboardingStatus = {
 };
 
 const STEPS = [
-  { id: "workspace", title: "Workspace", desc: "Create your isolated ledger" },
+  { id: "workspace", title: "Workspace", desc: clerkOn ? "Signed in — your ledger is provisioned" : "Create your isolated ledger" },
   { id: "profile", title: "Company", desc: "Name shown on reports" },
   { id: "openai", title: "OpenAI spend", desc: "Admin or service account key" },
   { id: "github", title: "GitHub", desc: "Outcomes from merged PRs" },
@@ -57,6 +56,7 @@ function OnboardingInner() {
       if (data.companyName) setCompanyName(data.companyName);
       if (data.complete) {
         router.replace(nextPath);
+        router.refresh();
       }
     }
   }, [nextPath, router]);
@@ -241,12 +241,40 @@ function OnboardingInner() {
     );
   }
 
+  const doneCount = status?.progress?.done ?? 0;
+  const totalCount = status?.progress?.total ?? STEPS.length;
+  const pctDone = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
   return (
-    <div className="mx-auto max-w-2xl py-10">
-      <h1 className="theme-heading text-2xl font-semibold">Set up your ledger</h1>
-      <p className="mt-1 theme-text-muted">
-        Complete each step — your credentials stay in your workspace only.
-      </p>
+    <div className="mx-auto min-h-screen max-w-2xl px-4 py-10 md:py-14">
+      <header className="mb-10 text-center md:text-left">
+        <p className="text-xs font-semibold uppercase tracking-widest theme-accent">
+          Welcome to Outcome Ledger
+        </p>
+        <h1 className="theme-heading mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+          Let&apos;s connect your stack
+        </h1>
+        <p className="mt-3 max-w-lg text-base leading-relaxed theme-text-muted">
+          {clerkOn
+            ? "Your workspace is ready. Complete the steps below to see real CPST — we never show demo data on your account."
+            : "Complete each step — your credentials stay in your workspace only."}
+        </p>
+        <div className="mt-6">
+          <div className="mb-2 flex justify-between text-xs font-medium theme-text-muted">
+            <span>Setup progress</span>
+            <span>{pctDone}%</span>
+          </div>
+          <div
+            className="h-2 overflow-hidden rounded-full"
+            style={{ background: "var(--border)" }}
+          >
+            <div
+              className="theme-accent-bg h-full rounded-full transition-all duration-500"
+              style={{ width: `${pctDone}%` }}
+            />
+          </div>
+        </div>
+      </header>
 
       {apiKeyShown && (
         <div className="mt-4 rounded-lg border border-[var(--warn)] bg-[var(--warn-dim)] p-4 text-sm">
@@ -350,16 +378,22 @@ function OnboardingInner() {
 
       {error && <p className="mt-4 text-sm text-[var(--bad)]">{error}</p>}
 
-      <div className="mt-8 flex items-center justify-between text-sm">
-        <span className="theme-text-muted">
-          {status?.progress
-            ? `${status.progress.done} / ${status.progress.total} complete`
-            : null}
-        </span>
-        <Link href={nextPath} className="theme-accent hover:underline">
-          Skip to dashboard →
-        </Link>
-      </div>
+      {status?.complete ? (
+        <div className="theme-panel mt-8 rounded-xl p-6 text-center">
+          <p className="font-medium text-[var(--good)]">Setup complete</p>
+          <button
+            type="button"
+            onClick={() => router.replace(nextPath)}
+            className="theme-accent-bg mt-4 rounded-lg px-5 py-2.5 text-sm font-medium text-white"
+          >
+            Open dashboard
+          </button>
+        </div>
+      ) : (
+        <p className="mt-8 text-center text-xs theme-text-dim md:text-left">
+          {doneCount} of {totalCount} steps done — finish setup to unlock Overview.
+        </p>
+      )}
     </div>
   );
 }

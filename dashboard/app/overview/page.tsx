@@ -1,10 +1,13 @@
+import { redirect } from "next/navigation";
 import { AttributionBanner } from "@/components/attribution-banner";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
 import { OutcomeGraphPanel } from "@/components/outcome-graph-panel";
 import { PageHeader } from "@/components/page-header";
+import { SetupRequired } from "@/components/setup-required";
 import { WinsPanel } from "@/components/wins-panel";
 import { fetchAttribution, fetchOverview, fetchWins } from "@/lib/api";
+import { requireOnboardingComplete } from "@/lib/onboarding-gate";
 import {
   attributionInsight,
   cpstTrendInsight,
@@ -14,11 +17,25 @@ import { pct, usd, usdCpst } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
+  const gate = await requireOnboardingComplete();
+  if (!gate.complete) {
+    redirect("/onboarding");
+  }
+
   const [data, winsData, attribution] = await Promise.all([
     fetchOverview(),
     fetchWins(),
     fetchAttribution(),
   ]);
+
+  const needsSetup =
+    data.dataSource === "setup-required" ||
+    data.dataSource === "empty" ||
+    (!data.lastSync && (data.totalSpendUsd ?? 0) === 0);
+
+  if (needsSetup) {
+    return <SetupRequired reason={gate.reason} />;
+  }
 
   const spendTrend = data.spendTrend ?? [];
   const teams = data.teams ?? [];

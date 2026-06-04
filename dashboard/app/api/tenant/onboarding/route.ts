@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { outcomeLedgerHeaders } from "@/lib/api-headers";
+import { ONBOARDING_COOKIE } from "@/lib/onboarding-gate";
 
 const API_URL = (
   process.env.OUTCOME_LEDGER_API_URL ||
@@ -16,5 +17,15 @@ export async function GET() {
     cache: "no-store",
   });
   const data = await res.json().catch(() => ({}));
-  return NextResponse.json(data, { status: res.status });
+  const response = NextResponse.json(data, { status: res.status });
+  if (res.ok && data.complete) {
+    response.cookies.set(ONBOARDING_COOKIE, "1", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+  }
+  return response;
 }

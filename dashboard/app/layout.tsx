@@ -29,7 +29,17 @@ export default function RootLayout({
   );
 
   if (isClerkEnabled()) {
-    return <ClerkProvider afterSignOutUrl="/sign-in">{body}</ClerkProvider>;
+    return (
+      <ClerkProvider
+        signInUrl="/sign-in"
+        signUpUrl="/sign-up"
+        afterSignInUrl="/onboarding"
+        afterSignUpUrl="/onboarding"
+        afterSignOutUrl="/sign-in"
+      >
+        {body}
+      </ClerkProvider>
+    );
   }
 
   return body;

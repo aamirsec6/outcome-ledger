@@ -11,9 +11,24 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./outcome_ledger.db")
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
+def _create_engine():
+    if DATABASE_URL.startswith("sqlite"):
+        return create_engine(
+            DATABASE_URL,
+            connect_args={"check_same_thread": False},
+        )
+    # PostgreSQL: ACID transactions, connection pooling, stale connection recovery
+    return create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "10")),
+    )
+
+
+engine = _create_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -57,9 +72,11 @@ def _migrate_legacy_columns() -> None:
 
 def init_db() -> None:
     from app import models  # noqa: F401
+    from app.schema_bootstrap import bootstrap_postgres_schema
 
     Base.metadata.create_all(bind=engine)
     _migrate_legacy_columns()
+    bootstrap_postgres_schema(engine)
 
 
 @contextmanager

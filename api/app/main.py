@@ -245,14 +245,19 @@ def connections_anthropic(payload: AnthropicConnectionPayload):
 
 @app.get("/health")
 def health():
+    from app.db import engine
+    from app.schema_bootstrap import verify_schema
+
+    schema = verify_schema(engine)
     return {
-        "ok": True,
+        "ok": schema.get("ok", True),
         "service": "outcome-ledger-api",
         "version": "0.2.1",
         "metricVersion": metric_version(),
         "stableDays": int(os.getenv("OUTCOME_STABLE_DAYS", "7")),
         "production": is_production(),
         "apiKeyRequired": is_production(),
+        "database": schema,
     }
 
 

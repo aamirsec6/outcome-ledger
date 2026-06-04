@@ -3,10 +3,18 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
+
+def _org_id_column(**kwargs: object):
+    """FK to organizations — one object per column (SQLAlchemy requirement)."""
+    return mapped_column(
+        String(36),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        **kwargs,
+    )
 
 
 def _uuid() -> str:
@@ -30,13 +38,10 @@ class OrganizationClerkLink(Base):
     """Maps Clerk user/org to an Outcome Ledger workspace."""
 
     __tablename__ = "organization_clerk_links"
-    __table_args__ = (
-        UniqueConstraint("clerk_org_id", name="uq_clerk_org_id"),
-        UniqueConstraint("org_id", name="uq_clerk_outcome_org_id"),
-    )
+    __table_args__ = (UniqueConstraint("clerk_org_id", name="uq_clerk_org_id"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(unique=True, index=True)
     clerk_user_id: Mapped[str] = mapped_column(String(128), index=True)
     clerk_org_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
@@ -48,7 +53,7 @@ class OrganizationApiKey(Base):
     __tablename__ = "organization_api_keys"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     key_prefix: Mapped[str] = mapped_column(String(16))
     key_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(64), default="default")
@@ -67,7 +72,7 @@ class ProviderConnection(Base):
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     provider: Mapped[str] = mapped_column(String(32), index=True)
     access_token: Mapped[str] = mapped_column(Text, nullable=False)
     external_login: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -83,7 +88,7 @@ class UsageEvent(Base):
     __table_args__ = (UniqueConstraint("org_id", "external_id", name="uq_usage_external"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     external_id: Mapped[str] = mapped_column(String(128))
     source: Mapped[str] = mapped_column(String(32), index=True)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -106,7 +111,7 @@ class TeamMapping(Base):
     __table_args__ = (UniqueConstraint("org_id", "pattern", name="uq_team_pattern"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     pattern: Mapped[str] = mapped_column(String(256))
     team_id: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
@@ -118,7 +123,7 @@ class SyncRun(Base):
     __tablename__ = "sync_runs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     trigger: Mapped[str] = mapped_column(String(32), default="manual")
     ok: Mapped[bool] = mapped_column(Boolean, default=True)
     results_json: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -133,7 +138,7 @@ class OutcomeEvent(Base):
     __table_args__ = (UniqueConstraint("org_id", "external_id", name="uq_outcome_external"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     external_id: Mapped[str] = mapped_column(String(128))
     outcome_type: Mapped[str] = mapped_column(String(64), default="pr_merged_stable")
     accepted: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -154,7 +159,7 @@ class OutcomeContract(Base):
     __table_args__ = (UniqueConstraint("org_id", "version", name="uq_org_contract_version"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     version: Mapped[str] = mapped_column(String(16))
     status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
     title: Mapped[str] = mapped_column(String(256))
@@ -178,7 +183,7 @@ class OutcomeContractChange(Base):
     __tablename__ = "outcome_contract_changes"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     contract_id: Mapped[str] = mapped_column(String(36), index=True)
     action: Mapped[str] = mapped_column(String(32))
     actor: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -193,7 +198,7 @@ class OutcomeContractApproval(Base):
     __table_args__ = (UniqueConstraint("contract_id", name="uq_contract_approval"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     contract_id: Mapped[str] = mapped_column(String(36), index=True)
     role: Mapped[str] = mapped_column(String(32), default="cfo")
     signer_name: Mapped[str] = mapped_column(String(128))
@@ -209,7 +214,7 @@ class ReportRun(Base):
     __tablename__ = "report_runs"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     status: Mapped[str] = mapped_column(String(16), default="draft", index=True)
     narrative: Mapped[str] = mapped_column(Text)
     model: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -273,7 +278,7 @@ class CpstSnapshot(Base):
     )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
-    org_id: Mapped[str] = mapped_column(String(36), index=True)
+    org_id: Mapped[str] = _org_id_column(index=True)
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     grain: Mapped[str] = mapped_column(String(16), default="month")

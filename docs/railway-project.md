@@ -15,7 +15,8 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | `outcome-ledger` (API) | `api` | https://outcome-ledger-production.up.railway.app |
 | `outcome-ledger-landing` | `landing` | https://outcome-ledger-landing-production.up.railway.app |
 | `outcome-ledger-dashboard` | `dashboard` | https://outcome-ledger-dashboard-production.up.railway.app |
-| `Postgres` | (Railway plugin) | internal |
+| `Postgres-Xstw` | (Railway plugin) | internal — **dedicated** Outcome Ledger DB |
+| `Postgres` | (legacy) | deprecated — do not wire API to this |
 
 ## One-time env vars (Railway UI)
 
@@ -23,7 +24,7 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 
 | Variable | Value |
 |----------|--------|
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
+| `DATABASE_URL` | `${{Postgres-Xstw.DATABASE_URL}}` |
 | `OUTCOME_LEDGER_API_KEY` | generate a long random secret |
 | `OPENAI_API_KEY` | Org **Admin** API key — [`openai-setup.md`](openai-setup.md) |
 | `OPENAI_ORG_ID` | `org-...` from OpenAI org settings (recommended) |

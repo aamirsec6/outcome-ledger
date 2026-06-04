@@ -48,6 +48,7 @@ function OnboardingInner() {
   const [openaiKey, setOpenaiKey] = useState("");
   const [openaiOrgId, setOpenaiOrgId] = useState("");
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
+  const [keyLocation, setKeyLocation] = useState<"cloud" | "private">("cloud");
 
   const refreshStatus = useCallback(async () => {
     const res = await fetch("/api/tenant/onboarding");
@@ -294,6 +295,54 @@ function OnboardingInner() {
         </div>
       </header>
 
+      <div className="theme-panel mb-6 space-y-3 p-4">
+        <p className="text-sm font-medium">Where will API keys live?</p>
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <input
+            type="radio"
+            name="keyLocation"
+            checked={keyLocation === "cloud"}
+            onChange={() => setKeyLocation("cloud")}
+            className="mt-1"
+          />
+          <span>
+            <span className="font-medium">Outcome Ledger cloud</span>
+            <span className="block theme-text-muted">
+              Recommended — connect OpenAI and GitHub in the steps below.
+            </span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-start gap-2 text-sm">
+          <input
+            type="radio"
+            name="keyLocation"
+            checked={keyLocation === "private"}
+            onChange={() => setKeyLocation("private")}
+            className="mt-1"
+          />
+          <span>
+            <span className="font-medium">Our computers only</span>
+            <span className="block theme-text-muted">
+              Use the private sync agent — keys never leave your network.
+            </span>
+          </span>
+        </label>
+        {keyLocation === "private" ? (
+          <button
+            type="button"
+            disabled={loading}
+            onClick={async () => {
+              await saveProfile();
+              const res = await fetch("/api/tenant/onboarding/skip", { method: "POST" });
+              if (res.ok) router.replace("/integrations#private-agent");
+            }}
+            className="theme-accent-bg rounded-md px-4 py-2 text-sm text-white"
+          >
+            Set up private agent →
+          </button>
+        ) : null}
+      </div>
+
       {apiKeyShown && (
         <div className="mt-4 rounded-lg border border-[var(--warn)] bg-[var(--warn-dim)] p-4 text-sm">
           <p className="font-medium">Save your workspace API key (shown once)</p>
@@ -345,7 +394,12 @@ function OnboardingInner() {
                     </button>
                   </div>
                 )}
-                {step.id === "openai" && !done && (
+                {step.id === "openai" && !done && keyLocation === "private" && (
+                  <p className="mt-3 text-sm theme-text-muted">
+                    Skipped — use the private agent on Integrations.
+                  </p>
+                )}
+                {step.id === "openai" && !done && keyLocation === "cloud" && (
                   <div className="mt-3 space-y-2">
                     <input
                       type="password"
@@ -370,7 +424,12 @@ function OnboardingInner() {
                     </button>
                   </div>
                 )}
-                {step.id === "github" && !done && (
+                {step.id === "github" && !done && keyLocation === "private" && (
+                  <p className="mt-3 text-sm theme-text-muted">
+                    Connect GitHub via the private agent instead.
+                  </p>
+                )}
+                {step.id === "github" && !done && keyLocation === "cloud" && (
                   <a
                     href="/api/github/connect"
                     className="theme-accent-bg mt-3 inline-block rounded-md px-3 py-2 text-sm text-white"

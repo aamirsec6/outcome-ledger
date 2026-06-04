@@ -16,7 +16,12 @@ export function SyncAllButton() {
       const res = await fetch("/api/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        setMessage(data.detail || data.error || "Sync failed");
+        const msg = data.detail || data.error || "Sync failed";
+        setMessage(
+          typeof msg === "string" && msg.includes("Clerk session")
+            ? `${msg} Try signing out and back in.`
+            : msg,
+        );
         return;
       }
       const gh = data.results?.github || data.github;

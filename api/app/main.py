@@ -12,6 +12,12 @@ from pydantic import BaseModel
 from app.db import get_db, init_db
 from app.security import cors_origins, is_production, validate_startup_config
 from app.tenant_auth import register_tenant, require_tenant_auth
+from app.tenant_api_keys import (
+    create_named_api_key,
+    ensure_agent_api_key,
+    list_org_api_keys,
+    rotate_agent_api_key,
+)
 from app.onboarding import build_onboarding_status
 from app.org_credentials import connections_summary, save_connection
 from app.github_oauth import (
@@ -129,6 +135,10 @@ class ClerkSyncPayload(BaseModel):
     companyName: str | None = None
 
 
+class TenantApiKeyCreatePayload(BaseModel):
+    name: str = "agent"
+
+
 class OpenAIConnectionPayload(BaseModel):
     apiKey: str
     openaiOrgId: str | None = None
@@ -205,6 +215,30 @@ def tenants_me():
                 "orgId": link.clerk_org_id if link else None,
             },
         }
+
+
+@app.get("/v1/tenants/api-keys", dependencies=[Depends(require_tenant_auth)])
+def tenants_list_api_keys():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return {"keys": list_org_api_keys(db, org_id)}
+
+
+@app.post("/v1/tenants/api-keys", dependencies=[Depends(require_tenant_auth)])
+def tenants_create_api_key(payload: TenantApiKeyCreatePayload):
+    name = (payload.name or "agent").strip()[:64] or "agent"
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        if name == "agent":
+            return ensure_agent_api_key(db, org_id)
+        return create_named_api_key(db, org_id, name=name)
+
+
+@app.post("/v1/tenants/api-keys/rotate", dependencies=[Depends(require_tenant_auth)])
+def tenants_rotate_agent_api_key():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return rotate_agent_api_key(db, org_id)
 
 
 @app.get("/v1/onboarding/status", dependencies=[Depends(require_tenant_auth)])

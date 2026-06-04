@@ -118,9 +118,16 @@ def require_tenant_auth(
                 org_id = resolve_org_id_from_clerk_token(db, bearer)
             except Exception as exc:
                 logger.warning("Clerk auth failed: %s", exc)
-                raise HTTPException(
-                    status_code=401, detail="Invalid Clerk session"
-                ) from exc
+                detail = "Invalid Clerk session"
+                err = str(exc).lower()
+                if "azp" in err or "audience" in err:
+                    detail = (
+                        "Invalid Clerk session — sign out and back in, or ask admin to "
+                        "set CLERK_AUTHORIZED_PARTIES to your dashboard URL on the API."
+                    )
+                elif "expired" in err:
+                    detail = "Session expired — please sign in again."
+                raise HTTPException(status_code=401, detail=detail) from exc
         else:
             org_id = resolve_org_id_from_api_key(db, x_api_key)
         set_request_org_id(org_id)

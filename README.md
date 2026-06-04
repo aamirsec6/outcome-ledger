@@ -61,7 +61,7 @@ outcome-ledger-mcp configure --outcome-ledger-url http://127.0.0.1:8090 --outcom
 outcome-ledger-mcp sync --since 30d
 ```
 
-See [docs/mcp-setup.md](docs/mcp-setup.md) and [mcp/README.md](mcp/README.md).
+See [docs/mcp-setup.md](docs/mcp-setup.md), [docs/agent-setup-one-pager.md](docs/agent-setup-one-pager.md), and [mcp/README.md](mcp/README.md).
 
 ## Docs
 

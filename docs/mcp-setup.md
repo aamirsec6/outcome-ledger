@@ -2,6 +2,8 @@
 
 The **Outcome Ledger MCP** is a local agent that fetches data from your AI tools and GitHub, then pushes normalized events to the cloud API. Use it when you want per-user attribution without storing vendor keys on Railway.
 
+**Non-technical summary:** [agent-setup-one-pager.md](agent-setup-one-pager.md)
+
 ## Prerequisites
 
 | Source | What you need |

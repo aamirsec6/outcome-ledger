@@ -13,7 +13,7 @@ export async function getClerkBearerToken(): Promise<string | undefined> {
   if (!isClerkEnabled()) return undefined;
   try {
     const { getToken } = await auth();
-    return (await getToken()) ?? undefined;
+    return (await getToken({ skipCache: true })) ?? undefined;
   } catch {
     return undefined;
   }

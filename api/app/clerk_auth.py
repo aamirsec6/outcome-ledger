@@ -38,20 +38,38 @@ def _jwks_client() -> PyJWKClient:
     return _jwks_client
 
 
+def _normalize_party(url: str) -> str:
+    return url.strip().rstrip("/")
+
+
+def _authorized_parties() -> list[str]:
+    raw = (os.getenv("CLERK_AUTHORIZED_PARTIES") or "").strip()
+    if not raw:
+        return []
+    return [_normalize_party(p) for p in raw.split(",") if p.strip()]
+
+
 def verify_clerk_session_token(token: str) -> dict[str, Any]:
     """Validate Clerk session JWT; returns claims (sub, org_id, …)."""
     if not clerk_enabled():
         raise ValueError("Clerk is not configured on the API")
     signing_key = _jwks_client().get_signing_key_from_jwt(token)
-    authorized = (os.getenv("CLERK_AUTHORIZED_PARTIES") or "").strip()
-    audiences = [a.strip() for a in authorized.split(",") if a.strip()] if authorized else None
-    decode_kwargs: dict[str, Any] = {
-        "algorithms": ["RS256"],
-        "issuer": _jwt_issuer(),
-    }
-    if audiences:
-        decode_kwargs["audience"] = audiences
-    return jwt.decode(token, signing_key.key, **decode_kwargs)
+    parties = _authorized_parties()
+    # Clerk session tokens use `azp` (authorized party), not JWT `aud`.
+    claims = jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        issuer=_jwt_issuer(),
+        options={"verify_aud": False},
+    )
+    if parties:
+        azp = _normalize_party(str(claims.get("azp") or ""))
+        if not azp or azp not in parties:
+            raise jwt.InvalidAudienceError(
+                f"Token azp {azp!r} not in CLERK_AUTHORIZED_PARTIES"
+            )
+    return claims
 
 
 def _claims_user_id(claims: dict[str, Any]) -> str:

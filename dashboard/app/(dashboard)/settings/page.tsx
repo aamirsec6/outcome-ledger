@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { ThemeSettings } from "@/components/theme-settings";
 import { TeamMappingsPanel } from "@/components/team-mappings";
 import { WinDefinitionPanel } from "@/components/win-definition-panel";
+import { AgentApiKeyCard } from "@/components/agent-api-key-card";
 import { SyncAllButton } from "@/components/sync-all-button";
 import {
   fetchOrgProfile,
@@ -33,6 +34,7 @@ export default async function SettingsPage() {
         Appearance · define a win · team attribution · CPST v1.0 · scheduled sync
       </PageHeader>
       <ThemeSettings />
+      <AgentApiKeyCard />
       <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
       <SyncAllButton />

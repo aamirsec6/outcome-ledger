@@ -16,6 +16,34 @@ app = typer.Typer(
 
 
 @app.command()
+def init(
+    outcome_ledger_url: str | None = None,
+    outcome_ledger_key: str | None = None,
+):
+    """Interactive setup — writes ~/.outcome-ledger/config.json."""
+    cfg = AppConfig.load()
+    default_url = cfg.outcome_ledger_url or "https://outcome-ledger-production.up.railway.app"
+    cfg.outcome_ledger_url = (
+        outcome_ledger_url or typer.prompt("Outcome Ledger API URL", default=default_url)
+    ).rstrip("/")
+    cfg.outcome_ledger_key = (
+        outcome_ledger_key
+        or cfg.outcome_ledger_key
+        or typer.prompt("Workspace agent key (ol_...)", hide_input=True)
+    )
+    if typer.confirm("Add GitHub token?", default=False):
+        cfg.github_token = typer.prompt("GitHub token", hide_input=True)
+        if typer.confirm("Add GitHub repos?", default=True):
+            repos = typer.prompt("Repos (comma-separated, e.g. org/repo)")
+            cfg.github_repos = [r.strip() for r in repos.split(",") if r.strip()]
+    if typer.confirm("Add OpenAI admin key?", default=False):
+        cfg.openai_api_key = typer.prompt("OpenAI admin key", hide_input=True)
+    cfg.save()
+    typer.echo(f"Saved config to {CONFIG_PATH}")
+    typer.echo("Next: outcome-ledger-mcp test && outcome-ledger-mcp sync --since 30d")
+
+
+@app.command()
 def configure(
     outcome_ledger_url: str = typer.Option(None, "--outcome-ledger-url"),
     outcome_ledger_key: str = typer.Option(None, "--outcome-ledger-key"),

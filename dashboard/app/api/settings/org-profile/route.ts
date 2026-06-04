@@ -4,17 +4,23 @@ import { outcomeLedgerHeaders } from "@/lib/api-headers";
 const API_URL = (process.env.OUTCOME_LEDGER_API_URL || "").replace(/\/$/, "");
 
 export async function GET() {
+  const fallback = { profile: { companyName: "Your organization" } };
   if (!API_URL) {
-    return NextResponse.json({ profile: { companyName: "Your organization" } });
+    return NextResponse.json(fallback);
   }
-  const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
-    headers: outcomeLedgerHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    return NextResponse.json({ profile: { companyName: "Your organization" } });
+  try {
+    const res = await fetch(`${API_URL}/v1/settings/org-profile`, {
+      headers: outcomeLedgerHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      return NextResponse.json(fallback);
+    }
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json(fallback);
   }
-  return res.json();
 }
 
 export async function PUT(req: Request) {

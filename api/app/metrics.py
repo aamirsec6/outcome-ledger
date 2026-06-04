@@ -21,7 +21,12 @@ from app.sync_audit import last_sync_run
 
 
 def ensure_default_org(db: Session) -> str:
-    org = db.query(Organization).filter(Organization.name == "Default org").first()
+    """Single-tenant org — do not key off display name (profile save renames org)."""
+    org = (
+        db.query(Organization)
+        .order_by(Organization.created_at.asc())
+        .first()
+    )
     if org:
         return org.id
     org = Organization(name="Default org")

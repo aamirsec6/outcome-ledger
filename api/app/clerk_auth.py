@@ -14,7 +14,7 @@ from app.models import Organization, OrganizationClerkLink
 from app.outcome_contracts import ensure_default_contract
 logger = logging.getLogger(__name__)
 
-_jwks_client: PyJWKClient | None = None
+_jwks_cache: PyJWKClient | None = None
 
 
 def clerk_enabled() -> bool:
@@ -31,11 +31,11 @@ def _jwt_issuer() -> str:
     return issuer
 
 
-def _jwks_client() -> PyJWKClient:
-    global _jwks_client
-    if _jwks_client is None:
-        _jwks_client = PyJWKClient(f"{_jwt_issuer()}/.well-known/jwks.json")
-    return _jwks_client
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_cache
+    if _jwks_cache is None:
+        _jwks_cache = PyJWKClient(f"{_jwt_issuer()}/.well-known/jwks.json")
+    return _jwks_cache
 
 
 def _normalize_party(url: str) -> str:
@@ -53,7 +53,7 @@ def verify_clerk_session_token(token: str) -> dict[str, Any]:
     """Validate Clerk session JWT; returns claims (sub, org_id, …)."""
     if not clerk_enabled():
         raise ValueError("Clerk is not configured on the API")
-    signing_key = _jwks_client().get_signing_key_from_jwt(token)
+    signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
     parties = _authorized_parties()
     # Clerk session tokens use `azp` (authorized party), not JWT `aud`.
     claims = jwt.decode(

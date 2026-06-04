@@ -2,6 +2,8 @@
 
 Public marketing site + waitlist. **Root Directory:** `landing`
 
+If GitHub deploys fail with `railpack process exited with an error`, run once from repo root: `../scripts/railway-ensure-monorepo.sh` (see [RAILWAY_MONOREPO.md](../RAILWAY_MONOREPO.md)).
+
 ## Create the service (Railway UI)
 
 1. Open project **outcome-ledger** → **+ New** → **GitHub Repo** (same monorepo) or **Empty Service**.

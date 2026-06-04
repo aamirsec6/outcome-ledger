@@ -1,13 +1,29 @@
 # Path-aware Railway deploys (monorepo). Requires RAILWAY_TOKEN in repo secrets.
-# Disable duplicate GitHub auto-deploy on each Railway service after this works.
+# Run scripts/railway-ensure-monorepo.sh once so GitHub→Railway also uses root dirs + Dockerfile.
 
 name: Deploy to Railway
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
+  ensure-monorepo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure Railway root directories
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skip ensure (set secret or run scripts/railway-ensure-monorepo.sh locally)"
+            exit 0
+          fi
+          chmod +x scripts/railway-ensure-monorepo.sh
+          ./scripts/railway-ensure-monorepo.sh
+
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -28,7 +44,7 @@ jobs:
               - 'landing/**'
 
   deploy-api:
-    needs: changes
+    needs: [ensure-monorepo, changes]
     if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +59,7 @@ jobs:
           railway up api --path-as-root --detach
 
   deploy-dashboard:
-    needs: changes
+    needs: [ensure-monorepo, changes]
     if: needs.changes.outputs.dashboard == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -58,7 +74,7 @@ jobs:
           railway up dashboard --path-as-root --detach
 
   deploy-landing:
-    needs: changes
+    needs: [ensure-monorepo, changes]
     if: needs.changes.outputs.landing == 'true'
     runs-on: ubuntu-latest
     steps:

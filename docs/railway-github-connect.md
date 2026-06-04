@@ -1,5 +1,13 @@
 # Connect Railway to GitHub (Outcome Ledger monorepo)
 
+**Permanent fix for `railpack process exited with an error`:** run once from repo root:
+
+```bash
+./scripts/railway-ensure-monorepo.sh
+```
+
+See also [RAILWAY_MONOREPO.md](../RAILWAY_MONOREPO.md).
+
 Outcome Ledger is a **monorepo**: one GitHub repo, **three Railway services** (API, dashboard, landing). GitHub is linked **per service**, not once at the project level.
 
 **Repo:** https://github.com/aamirsec6/outcome-ledger  

@@ -50,44 +50,25 @@ function legacyMiddleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-async function onboardingComplete(request: NextRequest): Promise<boolean> {
-  if (request.cookies.get(ONBOARDING_COOKIE)?.value === "1") {
-    return true;
-  }
-  const origin = request.nextUrl.origin;
-  const res = await fetch(`${origin}/api/tenant/onboarding`, {
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-    cache: "no-store",
-  });
-  if (!res.ok) return false;
-  const data = await res.json().catch(() => ({}));
-  return Boolean(data.complete);
-}
-
 const useClerk = Boolean(
   (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "").trim(),
 );
 
 export default useClerk
   ? clerkMiddleware(async (auth, request) => {
-      const { pathname } = request.nextUrl;
-
       if (isAuthPublicRoute(request)) {
         return;
       }
 
       await auth.protect();
 
-      if (isOnboardingRoute(request)) {
+      const { pathname } = request.nextUrl;
+      if (isOnboardingRoute(request) || pathname.startsWith("/api/")) {
         return;
       }
 
-      if (pathname.startsWith("/api/")) {
-        return;
-      }
-
-      const complete = await onboardingComplete(request);
-      if (!complete) {
+      // Cookie only — avoid edge self-fetch (caused 500 SSL errors on Railway)
+      if (request.cookies.get(ONBOARDING_COOKIE)?.value !== "1") {
         const url = request.nextUrl.clone();
         url.pathname = "/onboarding";
         if (pathname !== "/") {

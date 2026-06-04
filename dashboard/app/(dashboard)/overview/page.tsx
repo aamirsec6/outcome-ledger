@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { AttributionBanner } from "@/components/attribution-banner";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
@@ -7,7 +6,6 @@ import { PageHeader } from "@/components/page-header";
 import { SetupRequired } from "@/components/setup-required";
 import { WinsPanel } from "@/components/wins-panel";
 import { fetchAttribution, fetchOverview, fetchWins } from "@/lib/api";
-import { requireOnboardingComplete } from "@/lib/onboarding-gate";
 import {
   attributionInsight,
   cpstTrendInsight,
@@ -17,11 +15,6 @@ import { pct, usd, usdCpst } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const gate = await requireOnboardingComplete();
-  if (!gate.complete) {
-    redirect("/onboarding");
-  }
-
   const [data, winsData, attribution] = await Promise.all([
     fetchOverview(),
     fetchWins(),
@@ -34,7 +27,7 @@ export default async function OverviewPage() {
     (!data.lastSync && (data.totalSpendUsd ?? 0) === 0);
 
   if (needsSetup) {
-    return <SetupRequired reason={gate.reason} />;
+    return <SetupRequired />;
   }
 
   const spendTrend = data.spendTrend ?? [];

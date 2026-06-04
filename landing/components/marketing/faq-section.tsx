@@ -4,16 +4,17 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { FAQ_ITEMS } from "@/lib/marketing-content";
 import { cn } from "@/lib/cn";
-import { SectionLabel } from "./section-label";
 
 export function FaqSection() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="scroll-mt-28 px-4 py-24 md:py-32">
+    <section
+      id="faq"
+      className="scroll-mt-28 border-t border-[var(--border)] px-4 py-20 md:py-28"
+    >
       <div className="mx-auto max-w-3xl">
-        <SectionLabel code="FAQ" />
-        <h2 className="font-display mt-4 text-3xl font-semibold text-white">
+        <h2 className="text-2xl font-medium tracking-tight text-white md:text-3xl">
           Common questions
         </h2>
 
@@ -29,21 +30,21 @@ export function FaqSection() {
                 onClick={() => setOpen(open === i ? null : i)}
                 aria-expanded={open === i}
               >
-                <span className="text-sm font-medium text-zinc-200">{item.q}</span>
+                <span className="text-sm font-medium text-white">{item.q}</span>
                 <Plus
                   className={cn(
-                    "h-4 w-4 shrink-0 text-zinc-500 transition",
-                    open === i && "rotate-45"
+                    "h-4 w-4 shrink-0 text-[var(--text-dim)] transition",
+                    open === i && "rotate-45",
                   )}
                 />
               </button>
               <div
                 className={cn(
                   "grid transition-all duration-300",
-                  open === i ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  open === i ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
                 )}
               >
-                <p className="overflow-hidden px-5 pb-4 text-sm leading-relaxed text-zinc-500">
+                <p className="overflow-hidden px-5 pb-4 text-sm leading-relaxed text-[var(--text-muted)]">
                   {item.a}
                 </p>
               </div>

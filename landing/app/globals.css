@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #070708;
-  --bg-elevated: #111113;
-  --bg-card: #161618;
+  --bg: #000000;
+  --bg-elevated: #0a0a0a;
+  --bg-card: #111111;
+  --bg-code: #0d0d0d;
   --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --text: #f4f4f5;
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text: #ededed;
   --text-muted: #a1a1aa;
   --text-dim: #71717a;
   --accent: #34d399;
   --accent-dim: rgba(52, 211, 153, 0.12);
-  --accent-glow: rgba(52, 211, 153, 0.35);
+  --accent-glow: rgba(52, 211, 153, 0.25);
+  --code-keyword: #c792ea;
+  --code-string: #c3e88d;
+  --code-fn: #82aaff;
+  --code-comment: #546e7a;
   --warm: #fbbf24;
-  --warm-dim: rgba(251, 191, 36, 0.1);
 }
 
 body {
@@ -23,7 +27,8 @@ body {
 }
 
 .font-display {
-  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .font-mono-label {
@@ -40,41 +45,13 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 50s linear infinite;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 4s ease-in-out infinite;
+  animation: marquee 60s linear infinite;
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -83,7 +60,7 @@ body {
 }
 
 .animate-fade-up {
-  animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 html {
@@ -91,6 +68,21 @@ html {
 }
 
 ::selection {
-  background: var(--accent-dim);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--text);
+}
+
+/* Resend-style floor glow */
+.floor-glow {
+  background: radial-gradient(
+    ellipse 90% 60% at 50% 0%,
+    rgba(255, 255, 255, 0.06),
+    transparent 70%
+  );
+}
+
+.code-tab-active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border-strong);
 }

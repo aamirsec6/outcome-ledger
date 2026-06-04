@@ -1,5 +1,4 @@
 import { PRODUCT_LAYERS } from "@/lib/marketing-content";
-import { SectionLabel } from "./section-label";
 
 const BENTO: Record<string, string> = {
   ingest: "md:col-span-2 md:row-span-1",
@@ -12,13 +11,12 @@ const BENTO: Record<string, string> = {
 
 export function LayersSection() {
   return (
-    <section id="product" className="scroll-mt-28 px-4 py-24 md:py-32">
+    <section id="product" className="scroll-mt-28 border-t border-[var(--border)] px-4 py-20 md:py-28">
       <div className="mx-auto max-w-6xl">
-        <SectionLabel code="Platform" />
-        <h2 className="font-display mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-white md:text-4xl">
+        <h2 className="mt-0 max-w-2xl text-2xl font-medium tracking-tight text-white md:text-3xl">
           Six layers. One number finance trusts.
         </h2>
-        <p className="mt-4 max-w-xl text-zinc-500">
+        <p className="mt-4 max-w-xl text-[var(--text-muted)]">
           Not another token chart — a unified stack from vendor ingest to CFO-signable
           exports.
         </p>
@@ -39,7 +37,7 @@ export function LayersSection() {
               <h3 className="font-display relative mt-4 text-xl font-semibold text-white">
                 {layer.title}
               </h3>
-              <p className="relative mt-2 text-sm leading-relaxed text-zinc-500">
+              <p className="relative mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
                 {layer.description}
               </p>
               <ul className="relative mt-5 flex flex-wrap gap-2">

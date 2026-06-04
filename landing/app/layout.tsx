@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const sans = DM_Sans({
+const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
-});
-
-const display = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["500", "600", "700"],
 });
 
 const mono = JetBrains_Mono({
@@ -19,16 +13,21 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Outcome Ledger — Cost per accepted outcome",
+  title: "Outcome Ledger — CPST for developers",
   description:
-    "Value accounting for AI-assisted engineering. CPST, outcome contracts, and board-ready exports.",
+    "The best way to tie AI spend to accepted engineering outcomes. Deliver board-ready CPST at scale.",
+  openGraph: {
+    title: "Outcome Ledger — CPST for developers",
+    description:
+      "Connect AI spend to stable merged wins. Deterministic value accounting finance can trust.",
+  },
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen antialiased">{children}</body>
     </html>
   );

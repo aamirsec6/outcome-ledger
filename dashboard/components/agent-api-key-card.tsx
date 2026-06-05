@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy, Key, RefreshCw } from "lucide-react";
+import { Copy, Eye, Key, RefreshCw } from "lucide-react";
 import {
   clearAgentKeyLocally,
   loadAgentKeyLocally,
@@ -11,20 +11,27 @@ import {
 
 export function AgentApiKeyCard() {
   const [keyPrefix, setKeyPrefix] = useState<string | null>(null);
+  const [keyName, setKeyName] = useState<string | null>(null);
   const [fullKey, setFullKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
+    setError(null);
     const res = await fetch("/api/agent/api-keys");
-    if (!res.ok) return;
-    const data = await res.json();
-    const agent = (data.keys || []).find(
-      (k: { name: string; revokedAt: string | null }) =>
-        k.name === "agent" && !k.revokedAt,
-    );
-    setKeyPrefix(agent?.keyPrefix ?? null);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(
+        typeof data.detail === "string"
+          ? data.detail
+          : "Could not load API key — try signing out and back in.",
+      );
+      return;
+    }
+    setKeyPrefix(data.primaryKeyPrefix ?? null);
+    setKeyName(data.primaryKeyName ?? null);
   }, []);
 
   useEffect(() => {
@@ -37,30 +44,26 @@ export function AgentApiKeyCard() {
     setFullKey(key);
     saveAgentKeyLocally(key);
     setKeyPrefix(key.slice(0, 12));
+    setKeyName("agent");
+    setError(null);
   }
 
-  async function createKey() {
+  async function revealKey() {
     setLoading(true);
     setMessage(null);
+    setError(null);
     try {
-      const res = await fetch("/api/agent/api-keys", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
+      const res = await fetch("/api/agent/api-keys/reveal", { method: "POST" });
       const data = await res.json();
       if (data.apiKey) {
         persistKey(data.apiKey);
-        setMessage("Saved in this browser — copy it for your private sync agent.");
-      } else if (data.existing) {
         setMessage(
-          data.message ||
-            "A key already exists. Rotate to get a new one, or use the copy saved in this browser.",
+          "Key saved in this browser. Copy it for outcome-ledger-mcp configure — we cannot show it again from the server unless you reveal again.",
         );
-        await load();
       } else {
-        setMessage(data.detail || data.message || "Could not create key");
+        setError(data.detail || data.message || "Could not reveal API key");
       }
+      await load();
     } finally {
       setLoading(false);
     }
@@ -69,14 +72,15 @@ export function AgentApiKeyCard() {
   async function rotate() {
     setLoading(true);
     setMessage(null);
+    setError(null);
     try {
       const res = await fetch("/api/agent/api-keys/rotate", { method: "POST" });
       const data = await res.json();
       if (data.apiKey) {
         persistKey(data.apiKey);
-        setMessage("New key saved in this browser — update your agent config if you rotated.");
+        setMessage("New key saved in this browser — update your agent if you rotated.");
       } else {
-        setMessage(data.message || data.detail || "Rotate failed");
+        setError(data.message || data.detail || "Rotate failed");
       }
       await load();
     } finally {
@@ -94,37 +98,48 @@ export function AgentApiKeyCard() {
   function removeLocal() {
     clearAgentKeyLocally();
     setFullKey(null);
-    setMessage("Removed from this browser. Your workspace key still works until you rotate.");
+    setMessage("Removed from this browser. Click “Show API key” to reveal again.");
   }
 
   return (
-    <section className="theme-panel space-y-4 p-5">
+    <section className="theme-panel space-y-4 p-5" id="outcome-ledger-api-key">
       <div className="flex items-start gap-3">
         <Key className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
         <div className="min-w-0 flex-1">
           <h2 className="theme-heading text-lg font-semibold">Outcome Ledger API key</h2>
           <p className="mt-1 text-sm theme-text-muted">
-            Use this <code className="text-xs">ol_…</code> key for the private sync agent on
-            your computer. Dashboard sync uses your sign-in — you don&apos;t need this key for
-            &quot;Run full sync&quot; in the browser.
+            Your <code className="text-xs">ol_…</code> key for the private sync agent. Browser
+            sync uses your sign-in — this key is only needed for{' '}
+            <code className="text-xs">outcome-ledger-mcp</code> on your computer.
           </p>
         </div>
       </div>
 
+      {error ? <p className="text-sm text-[var(--bad)]">{error}</p> : null}
+
       {keyPrefix && !fullKey ? (
         <p className="text-sm">
-          Active key on server: <code className="theme-code">{keyPrefix}…</code>
-          <span className="theme-text-muted">
-            {" "}
-            — create or rotate to reveal the full key here, or use a copy you saved earlier.
+          Workspace key active: <code className="theme-code">{keyPrefix}…</code>
+          {keyName ? (
+            <span className="theme-text-muted"> ({keyName})</span>
+          ) : null}
+          <span className="block mt-1 text-xs theme-text-muted">
+            The full key is hidden for security. Click <strong>Show API key</strong> to generate
+            a copy you can use with the agent.
           </span>
         </p>
       ) : null}
 
+      {!keyPrefix && !fullKey && !error ? (
+        <p className="text-sm theme-text-muted">
+          No key yet — click <strong>Show API key</strong> to create one.
+        </p>
+      ) : null}
+
       {fullKey ? (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-4">
+        <div className="rounded-lg border border-[var(--good)] bg-[var(--good-dim)] p-4">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-medium theme-text-muted">Your workspace key</p>
+            <p className="text-xs font-medium text-[var(--good)]">Your API key</p>
             <button
               type="button"
               onClick={copyKey}
@@ -136,7 +151,7 @@ export function AgentApiKeyCard() {
           </div>
           <code className="block break-all text-xs">{fullKey}</code>
           <p className="mt-2 text-xs theme-text-dim">
-            Kept in this browser session so you can return to Settings and copy again.
+            Saved in this browser (localStorage) until you remove it.
           </p>
         </div>
       ) : null}
@@ -144,16 +159,15 @@ export function AgentApiKeyCard() {
       {message ? <p className="text-xs theme-text-muted">{message}</p> : null}
 
       <div className="flex flex-wrap gap-2">
-        {!keyPrefix && !fullKey ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={createKey}
-            className="theme-accent-bg rounded-md px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {loading ? "Creating…" : "Create API key"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          disabled={loading}
+          onClick={revealKey}
+          className="theme-accent-bg inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm text-white disabled:opacity-50"
+        >
+          <Eye className="h-4 w-4" />
+          {loading ? "Working…" : fullKey ? "Reveal new key" : "Show API key"}
+        </button>
         <button
           type="button"
           disabled={loading}
@@ -161,7 +175,7 @@ export function AgentApiKeyCard() {
           className="theme-btn-secondary inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm disabled:opacity-50"
         >
           <RefreshCw className="h-4 w-4" />
-          {loading ? "Rotating…" : "Rotate key"}
+          Rotate key
         </button>
         {fullKey ? (
           <button
@@ -169,7 +183,7 @@ export function AgentApiKeyCard() {
             onClick={removeLocal}
             className="rounded-md px-3 py-2 text-sm theme-text-muted hover:underline"
           >
-            Remove from this browser
+            Remove from browser
           </button>
         ) : null}
         <Link

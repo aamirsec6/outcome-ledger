@@ -16,6 +16,8 @@ from app.tenant_api_keys import (
     create_named_api_key,
     ensure_agent_api_key,
     list_org_api_keys,
+    primary_workspace_key,
+    reveal_workspace_api_key,
     rotate_agent_api_key,
 )
 from app.onboarding import build_onboarding_status
@@ -221,7 +223,12 @@ def tenants_me():
 def tenants_list_api_keys():
     with get_db() as db:
         org_id = ensure_default_org(db)
-        return {"keys": list_org_api_keys(db, org_id)}
+        primary = primary_workspace_key(db, org_id)
+        return {
+            "keys": list_org_api_keys(db, org_id),
+            "primaryKeyPrefix": primary["keyPrefix"] if primary else None,
+            "primaryKeyName": primary["name"] if primary else None,
+        }
 
 
 @app.post("/v1/tenants/api-keys", dependencies=[Depends(require_tenant_auth)])
@@ -239,6 +246,14 @@ def tenants_rotate_agent_api_key():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return rotate_agent_api_key(db, org_id)
+
+
+@app.post("/v1/tenants/api-keys/reveal", dependencies=[Depends(require_tenant_auth)])
+def tenants_reveal_api_key():
+    """Create or rotate agent key and return full ol_* (shown once — client should save)."""
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return reveal_workspace_api_key(db, org_id)
 
 
 @app.get("/v1/onboarding/status", dependencies=[Depends(require_tenant_auth)])

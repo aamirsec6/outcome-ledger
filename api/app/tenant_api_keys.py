@@ -20,6 +20,34 @@ def _row_to_dict(row: OrganizationApiKey) -> dict:
     }
 
 
+WORKSPACE_KEY_NAMES = ("agent", "clerk", "dashboard")
+
+
+def primary_workspace_key(db: Session, org_id: str) -> dict | None:
+    """First active workspace key (agent preferred, then clerk from sign-up)."""
+    for name in WORKSPACE_KEY_NAMES:
+        row = (
+            db.query(OrganizationApiKey)
+            .filter(
+                OrganizationApiKey.org_id == org_id,
+                OrganizationApiKey.name == name,
+                OrganizationApiKey.revoked_at.is_(None),
+            )
+            .first()
+        )
+        if row:
+            return _row_to_dict(row)
+    return None
+
+
+def reveal_workspace_api_key(db: Session, org_id: str) -> dict:
+    """Return a viewable ol_* key — creates agent key or rotates existing agent key."""
+    active_agent = list_active_agent_keys(db, org_id)
+    if active_agent:
+        return rotate_agent_api_key(db, org_id)
+    return create_named_api_key(db, org_id, name="agent")
+
+
 def list_org_api_keys(db: Session, org_id: str) -> list[dict]:
     rows = (
         db.query(OrganizationApiKey)

@@ -10,6 +10,8 @@ from app.tenant_api_keys import (
     create_named_api_key,
     ensure_agent_api_key,
     list_org_api_keys,
+    primary_workspace_key,
+    reveal_workspace_api_key,
     rotate_agent_api_key,
 )
 
@@ -25,6 +27,22 @@ def db():
     session.flush()
     yield session, org.id
     session.close()
+
+
+def test_primary_workspace_key_prefers_clerk(db):
+    session, org_id = db
+    create_named_api_key(session, org_id, name="clerk")
+    primary = primary_workspace_key(session, org_id)
+    assert primary is not None
+    assert primary["name"] == "clerk"
+
+
+def test_reveal_creates_agent_key(db):
+    session, org_id = db
+    create_named_api_key(session, org_id, name="clerk")
+    revealed = reveal_workspace_api_key(session, org_id)
+    assert revealed["apiKey"].startswith("ol_")
+    assert revealed["name"] == "agent"
 
 
 def test_create_and_rotate_agent_key(db):

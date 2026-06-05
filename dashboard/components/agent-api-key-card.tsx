@@ -9,12 +9,22 @@ import {
   saveAgentKeyLocally,
 } from "@/lib/agent-key-storage";
 
-export function AgentApiKeyCard() {
-  const [keyPrefix, setKeyPrefix] = useState<string | null>(null);
-  const [keyName, setKeyName] = useState<string | null>(null);
+type AgentApiKeyCardProps = {
+  initialPrefix?: string | null;
+  initialName?: string | null;
+  initialError?: string | null;
+};
+
+export function AgentApiKeyCard({
+  initialPrefix = null,
+  initialName = null,
+  initialError = null,
+}: AgentApiKeyCardProps) {
+  const [keyPrefix, setKeyPrefix] = useState<string | null>(initialPrefix);
+  const [keyName, setKeyName] = useState<string | null>(initialName);
   const [fullKey, setFullKey] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -163,7 +173,7 @@ export function AgentApiKeyCard() {
           type="button"
           disabled={loading}
           onClick={revealKey}
-          className="theme-accent-bg inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="theme-btn-primary inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm disabled:opacity-50"
         >
           <Eye className="h-4 w-4" />
           {loading ? "Working…" : fullKey ? "Reveal new key" : "Show API key"}

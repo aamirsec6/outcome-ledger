@@ -9,6 +9,7 @@ import {
   fetchOrgProfile,
   fetchOutcomeWinSettings,
   fetchTeamMappings,
+  fetchWorkspaceApiKeyMeta,
   hasLiveApi,
 } from "@/lib/api";
 
@@ -16,16 +17,18 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const live = hasLiveApi();
-  const [mappings, winSettings, orgProfile] = live
+  const [mappings, winSettings, orgProfile, apiKeyMeta] = live
     ? await Promise.all([
         fetchTeamMappings(),
         fetchOutcomeWinSettings(),
         fetchOrgProfile(),
+        fetchWorkspaceApiKeyMeta(),
       ])
     : [
         [],
         { winType: "pr_merged_stable", stableDays: 7, summary: "", options: [] },
         { companyName: "Your organization" },
+        { primaryKeyPrefix: null, primaryKeyName: null, error: null },
       ];
 
   return (
@@ -34,7 +37,11 @@ export default async function SettingsPage() {
         Appearance · define a win · team attribution · CPST v1.0 · scheduled sync
       </PageHeader>
       <ThemeSettings />
-      <AgentApiKeyCard />
+      <AgentApiKeyCard
+        initialPrefix={apiKeyMeta.primaryKeyPrefix}
+        initialName={apiKeyMeta.primaryKeyName}
+        initialError={apiKeyMeta.error}
+      />
       <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
       <SyncAllButton />

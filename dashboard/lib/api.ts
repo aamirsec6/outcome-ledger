@@ -83,6 +83,43 @@ export async function fetchOrgProfile(): Promise<OrgProfile> {
   }
 }
 
+export type WorkspaceApiKeyMeta = {
+  primaryKeyPrefix: string | null;
+  primaryKeyName: string | null;
+  error: string | null;
+};
+
+export async function fetchWorkspaceApiKeyMeta(): Promise<WorkspaceApiKeyMeta> {
+  if (!API_URL) {
+    return { primaryKeyPrefix: null, primaryKeyName: null, error: null };
+  }
+  try {
+    const res = await fetch(`${API_URL}/v1/tenants/api-keys`, {
+      headers: await outcomeLedgerHeaders(),
+      cache: "no-store",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const detail =
+        typeof data.detail === "string"
+          ? data.detail
+          : "Could not load API key — try signing out and back in.";
+      return { primaryKeyPrefix: null, primaryKeyName: null, error: detail };
+    }
+    return {
+      primaryKeyPrefix: data.primaryKeyPrefix ?? null,
+      primaryKeyName: data.primaryKeyName ?? null,
+      error: null,
+    };
+  } catch {
+    return {
+      primaryKeyPrefix: null,
+      primaryKeyName: null,
+      error: "Could not reach API — check your connection.",
+    };
+  }
+}
+
 export async function fetchTeamMappings(): Promise<{ pattern: string; teamId: string }[]> {
   if (!API_URL) return [];
   try {

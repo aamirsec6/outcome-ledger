@@ -8,6 +8,7 @@ from typing import Any
 
 import jwt
 from jwt import PyJWKClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Organization, OrganizationClerkLink
@@ -91,17 +92,28 @@ def get_clerk_link(
     clerk_org_id: str | None,
 ) -> OrganizationClerkLink | None:
     if clerk_org_id:
-        return (
+        row = (
             db.query(OrganizationClerkLink)
             .filter(OrganizationClerkLink.clerk_org_id == clerk_org_id)
             .first()
         )
+        if row:
+            return row
     return (
         db.query(OrganizationClerkLink)
         .filter(
             OrganizationClerkLink.clerk_user_id == clerk_user_id,
             OrganizationClerkLink.clerk_org_id.is_(None),
         )
+        .first()
+    )
+
+
+def _any_clerk_link_for_user(db: Session, clerk_user_id: str) -> OrganizationClerkLink | None:
+    return (
+        db.query(OrganizationClerkLink)
+        .filter(OrganizationClerkLink.clerk_user_id == clerk_user_id)
+        .order_by(OrganizationClerkLink.created_at.asc())
         .first()
     )
 
@@ -154,10 +166,18 @@ def resolve_org_id_from_clerk_token(db: Session, token: str) -> str:
     org_id = _claims_org_id(claims)
     link = get_clerk_link(db, clerk_user_id=user_id, clerk_org_id=org_id)
     if not link:
-        link = provision_clerk_tenant(
-            db,
-            clerk_user_id=user_id,
-            clerk_org_id=org_id,
-            workspace_name=claims.get("org_slug") or claims.get("org_name"),
-        )
+        try:
+            link = provision_clerk_tenant(
+                db,
+                clerk_user_id=user_id,
+                clerk_org_id=org_id,
+                workspace_name=claims.get("org_slug") or claims.get("org_name"),
+            )
+        except IntegrityError:
+            db.rollback()
+            link = get_clerk_link(db, clerk_user_id=user_id, clerk_org_id=org_id)
+            if not link:
+                link = _any_clerk_link_for_user(db, user_id)
+            if not link:
+                raise
     return link.org_id

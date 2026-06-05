@@ -173,6 +173,12 @@ html {
 }
 
 /* Buttons */
+.theme-accent-bg {
+  background: var(--accent);
+}
+.theme-accent-bg:hover:not(:disabled) {
+  opacity: 0.9;
+}
 .theme-btn-primary {
   display: inline-flex;
   align-items: center;

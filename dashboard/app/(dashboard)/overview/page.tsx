@@ -1,4 +1,5 @@
 import { AttributionBanner } from "@/components/attribution-banner";
+import { AttributionOverridePanel } from "@/components/attribution-override-panel";
 import { BenchmarkPanel } from "@/components/benchmark-panel";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
@@ -53,6 +54,8 @@ export default async function OverviewPage() {
       <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
 
       <BenchmarkPanel report={benchmarks} />
+
+      <AttributionOverridePanel />
 
       {attribution?.outcomeGraph ? (
         <OutcomeGraphPanel graph={attribution.outcomeGraph} />

@@ -283,6 +283,27 @@ export type BenchmarkReport = {
     cpstUsd: number;
   }[];
   history: { period: string; cpstUsd: number; linkedSpendPct: number }[];
+  anomalies?: {
+    week: string;
+    cpstUsd: number;
+    baselineUsd: number;
+    changePct: number;
+    severity: string;
+    message: string;
+  }[];
+  network?: {
+    available: boolean;
+    reason?: string;
+    vertical?: string;
+    cohortSize?: number;
+    cpst?: {
+      yourUsd: number;
+      p25: number;
+      p50: number;
+      p75: number;
+      yourPercentile: number;
+    };
+  };
 };
 
 export async function fetchBenchmarks(): Promise<BenchmarkReport | null> {

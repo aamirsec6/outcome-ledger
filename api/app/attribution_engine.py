@@ -17,10 +17,14 @@ from app.attribution import (
     _empty_graph,
     confidence_for_link,
 )
-from app.models import AttributionLink, OutcomeEvent, UsageEvent
+from app.learned_linker import link_probability
+from app.models import AttributionLink, LinkerModel, OutcomeEvent, UsageEvent
+from app.usage_time_index import UsageTimeIndex
 from app.workflow_classifier import label_outcome_workflows
 
 logger = logging.getLogger(__name__)
+
+LINKER_MIN_PROB = 0.12
 
 
 def _outcome_window(outcome: OutcomeEvent) -> tuple[datetime, datetime]:
@@ -63,7 +67,14 @@ def _candidate_outcomes(
     return []
 
 
-def _weight_for_link(usage: UsageEvent, outcome: OutcomeEvent) -> float:
+def _weight_for_link(
+    usage: UsageEvent,
+    outcome: OutcomeEvent,
+    *,
+    db: Session | None = None,
+    org_id: str | None = None,
+    linker_active: bool = False,
+) -> float:
     """Inverse time distance — nearer merge gets more of shared spend."""
     t = _as_utc(usage.period_start).timestamp()
     m = _as_utc(outcome.occurred_at).timestamp()
@@ -74,7 +85,14 @@ def _weight_for_link(usage: UsageEvent, outcome: OutcomeEvent) -> float:
         and (usage.repo or "").strip() == (outcome.repo or "").strip()
     )
     base = 1.0 / (1.0 + days)
-    return base * (1.5 if repo_match else 1.0)
+    w = base * (1.5 if repo_match else 1.0)
+    if linker_active and db and org_id:
+        prob = link_probability(db, org_id, usage, outcome)
+        if prob is not None:
+            if prob < LINKER_MIN_PROB:
+                return 0.0
+            w *= 0.5 + prob
+    return w
 
 
 def rebuild_attribution_graph(
@@ -136,6 +154,14 @@ def rebuild_attribution_graph(
         key = (ev.repo or "").strip() or "__none__"
         usage_by_repo[key].append(ev)
 
+    usage_index = UsageTimeIndex(all_usage)
+    linker_active = (
+        db.query(LinkerModel)
+        .filter(LinkerModel.org_id == org_id, LinkerModel.coefficients_json.isnot(None))
+        .first()
+        is not None
+    )
+
     created = 0
     for usage in all_usage:
         cost = float(usage.cost_usd or 0)
@@ -145,7 +171,25 @@ def rebuild_attribution_graph(
         if not candidates:
             continue
 
-        weights = [_weight_for_link(usage, o) for o in candidates]
+        paired = [
+            (o, w)
+            for o in candidates
+            if (
+                w := _weight_for_link(
+                    usage,
+                    o,
+                    db=db,
+                    org_id=org_id,
+                    linker_active=linker_active,
+                )
+            )
+            > 0
+        ]
+        if not paired:
+            continue
+        candidates, weights = zip(*paired)
+        candidates = list(candidates)
+        weights = list(weights)
         total_w = sum(weights) or 1.0
 
         for outcome, w in zip(candidates, weights):
@@ -169,7 +213,13 @@ def rebuild_attribution_graph(
                 repo_match=repo_match,
                 has_team_mapping=bool(outcome.team_id),
             )
-            if method == "time_window_only" and len(candidates) > 1:
+            if linker_active:
+                prob = link_probability(db, org_id, usage, outcome)
+                if prob is not None and prob >= 0.5:
+                    method = "learned_proportional"
+                elif method == "time_window_only" and len(candidates) > 1:
+                    method = "proportional_window"
+            elif method == "time_window_only" and len(candidates) > 1:
                 method = "proportional_window"
 
             existing = (
@@ -207,6 +257,8 @@ def rebuild_attribution_graph(
         "created": created,
         "outcomes": len(outcomes),
         "usageEvents": len(all_usage),
+        "indexSize": len(usage_index.events),
+        "linkerActive": linker_active,
     }
 
 
@@ -344,5 +396,76 @@ def summary_from_persisted_links(
         "windowAfterDays": WINDOW_AFTER_DAYS,
         "sampleLinks": sample,
         "linkCount": len(links),
-        "engine": "persisted_v2",
+        "engine": "persisted_v3",
     }
+
+
+def list_link_candidates(
+    db: Session,
+    org_id: str,
+    *,
+    limit: int = 15,
+    max_confidence: float = 0.65,
+) -> list[dict]:
+    """Low-confidence links for manual review / override UI."""
+    links = (
+        db.query(AttributionLink)
+        .filter(
+            AttributionLink.org_id == org_id,
+            AttributionLink.is_manual_override.is_(False),
+            AttributionLink.confidence <= max_confidence,
+        )
+        .order_by(AttributionLink.confidence.asc())
+        .limit(limit)
+        .all()
+    )
+    if not links:
+        return []
+
+    usage_ids = {l.usage_event_id for l in links}
+    outcome_ids = {l.outcome_event_id for l in links}
+    usage_map = {
+        u.id: u
+        for u in db.query(UsageEvent)
+        .filter(UsageEvent.id.in_(usage_ids))
+        .all()
+    }
+    outcome_map = {
+        o.id: o
+        for o in db.query(OutcomeEvent)
+        .filter(OutcomeEvent.id.in_(outcome_ids))
+        .all()
+    }
+
+    rows: list[dict] = []
+    for link in links:
+        usage = usage_map.get(link.usage_event_id)
+        outcome = outcome_map.get(link.outcome_event_id)
+        if not usage or not outcome:
+            continue
+        ml_prob = link_probability(db, org_id, usage, outcome)
+        rows.append(
+            {
+                "linkId": link.id,
+                "usageEventId": link.usage_event_id,
+                "outcomeEventId": link.outcome_event_id,
+                "allocatedUsd": link.allocated_usd,
+                "confidence": link.confidence,
+                "method": link.method,
+                "mlProbability": round(ml_prob, 3) if ml_prob is not None else None,
+                "usage": {
+                    "source": usage.source,
+                    "costUsd": float(usage.cost_usd or 0),
+                    "repo": usage.repo,
+                    "periodStart": _as_utc(usage.period_start).isoformat(),
+                    "traceId": usage.trace_id,
+                },
+                "outcome": {
+                    "title": outcome.title,
+                    "repo": outcome.repo,
+                    "workflowType": outcome.workflow_type,
+                    "occurredAt": _as_utc(outcome.occurred_at).isoformat(),
+                },
+            }
+        )
+    return rows

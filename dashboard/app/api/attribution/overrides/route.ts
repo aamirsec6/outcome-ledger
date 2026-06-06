@@ -1,0 +1,25 @@
+import { NextResponse } from "next/server";
+import { outcomeLedgerHeaders } from "@/lib/api-headers";
+
+const API_URL = (process.env.OUTCOME_LEDGER_API_URL || "").replace(/\/$/, "");
+
+export async function POST(request: Request) {
+  if (!API_URL) {
+    return NextResponse.json({ error: "API not configured" }, { status: 503 });
+  }
+  const body = await request.json().catch(() => ({}));
+  try {
+    const res = await fetch(`${API_URL}/v1/attribution/overrides`, {
+      method: "POST",
+      headers: {
+        ...(await outcomeLedgerHeaders()),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
+  } catch {
+    return NextResponse.json({ error: "API unreachable" }, { status: 502 });
+  }
+}

@@ -9,8 +9,11 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.anomalies import anomalies_for_org
 from app.attribution_engine import summary_from_persisted_links
 from app.models import AttributionLink, CpstSnapshot, OutcomeEvent, UsageEvent
+from app.network_benchmarks import network_percentiles
+from app.org_profile import org_profile_payload
 
 
 def _pct_change(current: float, prior: float) -> float | None:
@@ -133,6 +136,16 @@ def build_benchmark_report(db: Session, org_id: str, *, lookback_days: int = 90)
     elif linked_chg is not None and linked_chg >= 10:
         verdict = "attribution_improving"
 
+    profile = org_profile_payload(db, org_id)
+    vertical = (profile.get("industry") or "engineering_saas").strip() or "engineering_saas"
+    anomalies = anomalies_for_org(db, org_id, lookback_days=lookback_days)
+    network = network_percentiles(
+        db,
+        vertical=vertical,
+        cpst_usd=current_cpst,
+        linked_spend_pct=float(graph.get("outcomeLinkedSpendPct") or 0),
+    )
+
     return {
         "periodLabel": f"Last {lookback_days} days",
         "current": {
@@ -158,9 +171,13 @@ def build_benchmark_report(db: Session, org_id: str, *, lookback_days: int = 90)
         "verdict": verdict,
         "workflows": workflows,
         "history": history,
+        "anomalies": anomalies,
+        "network": network,
         "methodology": {
             "cpst": "total_spend / stable_outcomes",
-            "linking": "proportional time-window allocation (persisted graph v2)",
+            "linking": "proportional time-window + learned linker (persisted graph v3)",
             "workflows": "rules classifier on PR title/labels",
+            "anomalies": "EWMA on weekly CPST from spend trend",
+            "network": "k-anonymized vertical percentiles",
         },
     }

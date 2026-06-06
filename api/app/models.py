@@ -100,6 +100,9 @@ class UsageEvent(Base):
     team_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     repo: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    session_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    pr_number: Mapped[int | None] = mapped_column(nullable=True)
     raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
@@ -176,6 +179,38 @@ class AttributionLink(Base):
     is_manual_override: Mapped[bool] = mapped_column(Boolean, default=False)
     override_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class LinkerModel(Base):
+    """Per-org logistic regression weights for learned attribution."""
+
+    __tablename__ = "linker_models"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(unique=True, index=True)
+    coefficients_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    intercept: Mapped[float] = mapped_column(Float, default=0.0)
+    sample_count: Mapped[int] = mapped_column(default=0)
+    trained_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class BenchmarkContribution(Base):
+    """Anonymized org benchmark row for network percentiles."""
+
+    __tablename__ = "benchmark_contributions"
+    __table_args__ = (
+        UniqueConstraint("period", "anon_org_token", name="uq_bench_period_org"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    period: Mapped[str] = mapped_column(String(16), index=True)
+    anon_org_token: Mapped[str] = mapped_column(String(16), index=True)
+    vertical: Mapped[str] = mapped_column(String(64), default="engineering_saas", index=True)
+    headcount_band: Mapped[str] = mapped_column(String(32), default="unknown")
+    cpst_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    linked_spend_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    stable_outcomes: Mapped[int] = mapped_column(default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
 class OutcomeContract(Base):

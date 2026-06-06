@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -10,7 +11,12 @@ from app.ingest_github_commits import ingest_github_default_branch_commits
 from app.outcome_contracts import WIN_TYPE_COMMIT, primary_win_type
 from app.ingest_openai import ingest_openai_costs
 from app.attribution_engine import rebuild_attribution_graph
+from app.benchmarks import build_benchmark_report
 from app.cpst_history import record_cpst_snapshots
+from app.ingest_langfuse import ingest_langfuse_traces
+from app.learned_linker import train_linker_model
+from app.network_benchmarks import publish_org_benchmark
+from app.org_profile import org_profile_payload
 from app.outcome_contracts import ensure_default_contract
 from app.revert_check import check_reverts
 from app.sync_audit import finish_sync_run, start_sync_run
@@ -23,6 +29,9 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
     try:
         results["openai"] = ingest_openai_costs(db, org_id=org_id, lookback_days=lookback)
         results["anthropic"] = ingest_anthropic_costs(
+            db, org_id=org_id, lookback_days=lookback
+        )
+        results["langfuse"] = ingest_langfuse_traces(
             db, org_id=org_id, lookback_days=lookback
         )
         win_type = primary_win_type(db, org_id)
@@ -45,7 +54,23 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
         results["attributionGraph"] = rebuild_attribution_graph(
             db, org_id, lookback_days=lookback
         )
+        results["linkerModel"] = train_linker_model(db, org_id)
         results["cpstSnapshots"] = record_cpst_snapshots(db, org_id)
+        bench = build_benchmark_report(db, org_id, lookback_days=lookback)
+        profile = org_profile_payload(db, org_id)
+        vertical = (profile.get("industry") or "engineering_saas").strip() or "engineering_saas"
+        period = (bench.get("priorSnapshot") or {}).get("period") or datetime.now(
+            timezone.utc
+        ).strftime("%Y-%m")
+        results["networkBenchmark"] = publish_org_benchmark(
+            db,
+            org_id,
+            period=str(period),
+            vertical=vertical,
+            cpst_usd=float(bench["current"]["cpstUsd"]),
+            linked_spend_pct=float(bench["current"]["linkedSpendPct"]),
+            stable_outcomes=int(bench["current"]["stableOutcomes"]),
+        )
         if results["openai"].get("ok") is False and results["openai"].get("error"):
             pass
     except Exception as exc:

@@ -61,7 +61,7 @@ def test_proportional_link_orphan_csv():
         summary = summary_from_persisted_links(db, org_id, lookback_days=90)
         assert summary["outcomeLinkedSpendPct"] > 0
         assert summary["linkedSpendUsd"] > 0
-        assert summary["engine"] == "persisted_v2"
+        assert summary["engine"] == "persisted_v3"
     finally:
         db.rollback()
         db.close()

@@ -55,7 +55,11 @@ from app.executive_reports import (
     create_executive_report,
     latest_executive_report,
 )
-from app.attribution_engine import add_manual_override, rebuild_attribution_graph
+from app.attribution_engine import (
+    add_manual_override,
+    list_link_candidates,
+    rebuild_attribution_graph,
+)
 from app.benchmarks import build_benchmark_report
 from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
 from app.org_profile import org_profile_payload, update_org_profile
@@ -860,6 +864,13 @@ class AttributionOverridePayload(BaseModel):
     outcomeEventId: str
     reason: str
     allocatedUsd: float | None = None
+
+
+@app.get("/v1/attribution/candidates", dependencies=[Depends(require_tenant_auth)])
+def attribution_candidates(limit: int = 15):
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return {"candidates": list_link_candidates(db, org_id, limit=min(limit, 50))}
 
 
 @app.post("/v1/attribution/overrides", dependencies=[Depends(require_tenant_auth)])

@@ -1,7 +1,35 @@
 "use client";
 
-import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { AlertTriangle, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import { usdCpst } from "@/lib/format";
+
+export type BenchmarkAnomaly = {
+  week: string;
+  cpstUsd: number;
+  baselineUsd: number;
+  changePct: number;
+  severity: string;
+  message: string;
+};
+
+export type BenchmarkNetwork = {
+  available: boolean;
+  reason?: string;
+  vertical?: string;
+  cohortSize?: number;
+  cpst?: {
+    yourUsd: number;
+    p25: number;
+    p50: number;
+    p75: number;
+    yourPercentile: number;
+  };
+  linkedSpend?: {
+    yourPct: number;
+    p50: number;
+    yourPercentile: number;
+  };
+};
 
 export type BenchmarkReport = {
   periodLabel: string;
@@ -30,6 +58,8 @@ export type BenchmarkReport = {
     cpstUsd: number;
     linkedSpendPct: number;
   }[];
+  anomalies?: BenchmarkAnomaly[];
+  network?: BenchmarkNetwork;
 };
 
 function DeltaBadge({ value, invert }: { value: number | null | undefined; invert?: boolean }) {
@@ -95,6 +125,38 @@ export function BenchmarkPanel({
       </div>
 
       <div className={`rounded-lg border px-3 py-2 text-xs ${verdictColor}`}>{verdictLabel}</div>
+
+      {report.anomalies && report.anomalies.length > 0 ? (
+        <div className="space-y-1.5">
+          {report.anomalies.slice(0, 3).map((a) => (
+            <div
+              key={a.week}
+              className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-xs ${
+                a.severity === "high"
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : a.severity === "good"
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{a.message}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {report.network?.available && report.network.cpst ? (
+        <div className="theme-card rounded-lg px-3 py-2 text-xs">
+          <p className="font-medium" style={{ color: "var(--text)" }}>
+            Network benchmark · {report.network.vertical}
+          </p>
+          <p className="mt-1 theme-text-muted">
+            CPST percentile {report.network.cpst.yourPercentile} (cohort n=
+            {report.network.cohortSize}) · median {usdCpst(report.network.cpst.p50)}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="theme-card rounded-lg px-3 py-2">

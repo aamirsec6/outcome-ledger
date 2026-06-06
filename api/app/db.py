@@ -42,6 +42,9 @@ _LEGACY_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("cpst_snapshots", "linked_spend_pct", "FLOAT DEFAULT 0"),
     ("cpst_snapshots", "avg_link_confidence", "FLOAT DEFAULT 0"),
     ("cpst_snapshots", "workflow_json", "TEXT"),
+    ("usage_events", "trace_id", "VARCHAR(128)"),
+    ("usage_events", "session_id", "VARCHAR(128)"),
+    ("usage_events", "pr_number", "INTEGER"),
 ]
 
 

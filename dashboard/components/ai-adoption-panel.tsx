@@ -28,37 +28,43 @@ export function AiAdoptionPanel({ report }: Props) {
       </div>
 
       {report.codeAttribution?.available ? (
+        (() => {
+          const code = report.codeAttribution!;
+          const aiLines = code.aiLines ?? 0;
+          const humanLines = code.humanLines ?? 0;
+          const aiPct = code.aiPct ?? 0;
+          const humanPct = code.humanPct ?? 0;
+          return (
         <div className="rounded-lg border border-[var(--border)] p-4">
           <p className="text-xs font-medium theme-text-dim">AI vs human code (lines)</p>
           <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-[var(--bg-hover)]">
             <div
               className="bg-[var(--accent)]"
-              style={{ width: `${report.codeAttribution.aiPct}%` }}
-              title={`AI ${report.codeAttribution.aiPct}%`}
+              style={{ width: `${aiPct}%` }}
+              title={`AI ${aiPct}%`}
             />
             <div
               className="bg-[var(--border)]"
-              style={{ width: `${report.codeAttribution.humanPct}%` }}
-              title={`Human ${report.codeAttribution.humanPct}%`}
+              style={{ width: `${humanPct}%` }}
+              title={`Human ${humanPct}%`}
             />
           </div>
           <div className="mt-2 flex flex-wrap gap-4 text-sm tabular-nums">
             <span>
               <span className="theme-accent">AI </span>
-              {report.codeAttribution.aiLines.toLocaleString()} lines (
-              {pct(report.codeAttribution.aiPct)})
+              {aiLines.toLocaleString()} lines ({pct(aiPct)})
             </span>
             <span>
               <span className="theme-text-muted">Human </span>
-              {report.codeAttribution.humanLines.toLocaleString()} lines (
-              {pct(report.codeAttribution.humanPct)})
+              {humanLines.toLocaleString()} lines ({pct(humanPct)})
             </span>
           </div>
           <p className="mt-2 text-xs theme-text-dim">
-            {report.codeAttribution.confidenceNote} ({report.codeAttribution.prsCounted}{" "}
-            PRs/commits)
+            {code.confidenceNote} ({code.prsCounted ?? 0} PRs/commits)
           </p>
         </div>
+          );
+        })()
       ) : (
         <p className="text-sm theme-text-muted">
           {report.codeAttribution?.reason ||

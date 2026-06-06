@@ -40,7 +40,8 @@ def app_configured() -> bool:
 def _load_private_key() -> str | None:
     path = (os.getenv("GITHUB_APP_PRIVATE_KEY_PATH") or "").strip()
     if path and os.path.isfile(path):
-        return open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as f:
+            return f.read()
     raw = (os.getenv("GITHUB_APP_PRIVATE_KEY") or "").strip()
     if not raw:
         return None

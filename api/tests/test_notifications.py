@@ -8,6 +8,7 @@ from app.notification_settings import get_notification_settings, update_notifica
 from app.notifications.content import build_budget_alert
 from app.notifications.inbox import build_inbox_summary, count_pending_reviews
 from app.notifications.email import render_digest_text
+from app.github_webhooks import handle_github_webhook
 
 
 def setup_module():
@@ -81,4 +82,27 @@ def test_digest_text_renders():
     text = render_digest_text(ctx)
     assert "Outcome Ledger weekly digest" in text
     assert "Dashboard:" in text
+    db.close()
+
+
+def test_webhook_replay_protection():
+    """Duplicate delivery_id should be skipped."""
+    db = _session()
+    payload = {"zen": "keep it logically awesome"}
+    result1 = handle_github_webhook(db, "ping", payload, delivery_id="deliv-001")
+    assert result1.get("pong") is True
+    result2 = handle_github_webhook(db, "ping", payload, delivery_id="deliv-001")
+    assert result2.get("skipped") == "duplicate delivery"
+    db.close()
+
+
+def test_budget_alert_negative_rejected():
+    """Negative budget should raise ValueError, not silently become 0."""
+    db = _session()
+    org_id = ensure_default_org(db)
+    try:
+        update_notification_settings(db, org_id, {"monthlyBudgetUsd": -500})
+        assert False, "Should have raised ValueError"
+    except ValueError as exc:
+        assert "non-negative" in str(exc)
     db.close()

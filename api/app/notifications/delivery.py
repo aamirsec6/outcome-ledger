@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timedelta, timezone
@@ -101,7 +102,8 @@ def deliver_post_sync_notifications(
     filtered_alerts: list[dict] = []
 
     for alert in alerts:
-        key = f"{alert.get('type', 'alert')}:{alert.get('week') or alert.get('usedPct') or alert.get('message', '')[:40]}"
+        raw_key = f"{alert.get('type', 'alert')}:{alert.get('week') or alert.get('usedPct') or alert.get('message', '')[:60]}"
+        key = hashlib.sha256(raw_key.encode()).hexdigest()[:16]
         if _should_send_alert(last_alerts, key):
             filtered_alerts.append(alert)
             last_alerts = _mark_alert_sent({"lastAlertsJson": last_alerts}, key)["lastAlertsJson"]
@@ -136,9 +138,11 @@ def deliver_post_sync_notifications(
         if ok:
             org = db.query(Organization).filter(Organization.id == org_id).first()
             if org:
-                stored = get_notification_settings(db, org_id)
-                stored["lastAlertsJson"] = last_alerts
-                org.notifications_json = json.dumps(stored)
+                # Write last_alerts directly — avoids re-reading stale settings
+                # and reduces the race window for concurrent syncs.
+                current = get_notification_settings(db, org_id)
+                current["lastAlertsJson"] = last_alerts
+                org.notifications_json = json.dumps(current)
                 db.flush()
 
     if settings.get("githubPrCommentsEnabled"):

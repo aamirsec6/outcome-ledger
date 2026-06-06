@@ -103,10 +103,10 @@ def process_merged_pr_webhook(
     rebuild_attribution_graph(db, org_id, lookback_days=lookback)
     check_reverts(db, org_id)
 
-    new_ids = [outcome.id] if is_new else []
-    comments = post_pr_cost_comments(db, org_id, new_outcome_ids=new_ids or [outcome.id])
+    new_ids = [outcome.id] if is_new else None
+    comments = post_pr_cost_comments(db, org_id, new_outcome_ids=new_ids)
     notifications = deliver_post_sync_notifications(
-        db, org_id, new_outcome_ids=new_ids or [outcome.id]
+        db, org_id, new_outcome_ids=new_ids,
     )
 
     return {
@@ -120,7 +120,21 @@ def process_merged_pr_webhook(
     }
 
 
-def handle_github_webhook(db: Session, event: str, payload: dict) -> dict:
+# In-memory set of processed GitHub webhook delivery IDs.
+# Prevents duplicate processing if GitHub retries a delivery.
+_seen_delivery_ids: set[str] = set()
+_MAX_SEEN = 5000
+
+
+def handle_github_webhook(db: Session, event: str, payload: dict, *, delivery_id: str | None = None) -> dict:
+    # Replay protection: skip already-processed deliveries.
+    if delivery_id:
+        if delivery_id in _seen_delivery_ids:
+            return {"ok": True, "skipped": "duplicate delivery"}
+        _seen_delivery_ids.add(delivery_id)
+        # Evict oldest entries if the set grows too large.
+        if len(_seen_delivery_ids) > _MAX_SEEN:
+            _seen_delivery_ids.clear()
     if event == "ping":
         return {"ok": True, "pong": True}
 

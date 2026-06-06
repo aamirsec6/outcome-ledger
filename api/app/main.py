@@ -1216,13 +1216,14 @@ async def github_webhook(request: Request):
         raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     event = request.headers.get("X-GitHub-Event") or "unknown"
+    delivery_id = request.headers.get("X-GitHub-Delivery")
     try:
         payload = json.loads(body.decode("utf-8"))
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid JSON") from exc
 
     with get_db() as db:
-        result = handle_github_webhook(db, event, payload)
+        result = handle_github_webhook(db, event, payload, delivery_id=delivery_id)
     return result
 
 

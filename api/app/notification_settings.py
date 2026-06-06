@@ -70,8 +70,13 @@ def update_notification_settings(db: Session, org_id: str, payload: dict[str, An
             current["digestEmails"] = [str(e).strip() for e in raw if str(e).strip()]
     if "monthlyBudgetUsd" in payload:
         try:
-            current["monthlyBudgetUsd"] = max(0.0, float(payload.get("monthlyBudgetUsd") or 0))
-        except (TypeError, ValueError):
+            val = float(payload.get("monthlyBudgetUsd") or 0)
+            if val < 0:
+                raise ValueError("monthlyBudgetUsd must be non-negative")
+            current["monthlyBudgetUsd"] = val
+        except (TypeError, ValueError) as exc:
+            if "non-negative" in str(exc):
+                raise
             current["monthlyBudgetUsd"] = 0.0
     if "budgetAlertThresholdPct" in payload:
         try:

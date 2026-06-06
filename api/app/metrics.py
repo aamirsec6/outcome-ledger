@@ -184,14 +184,10 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
         .distinct()
         .all()
     }
+    from app.github_status import github_is_connected
+
     has_github = (
-        db.query(ProviderConnection)
-        .filter(
-            ProviderConnection.org_id == org_id,
-            ProviderConnection.provider == "github",
-        )
-        .first()
-        is not None
+        github_is_connected(db, org_id)
         or db.query(OutcomeEvent).filter(OutcomeEvent.org_id == org_id).first()
         is not None
     )

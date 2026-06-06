@@ -8,7 +8,8 @@ from datetime import datetime, timedelta, timezone
 import httpx
 from sqlalchemy.orm import Session
 
-from app.github_oauth import github_headers, resolve_github_token_and_repos
+from app.github_oauth import github_headers
+from app.github_resolve import resolve_github_token_and_repos
 from app.models import OutcomeEvent
 from app.team_mapping import resolve_team_for_repo
 

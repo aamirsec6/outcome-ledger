@@ -15,13 +15,29 @@ export function connectGithubUrl(): string {
   return "/api/github/connect";
 }
 
-export async function fetchGithubStatus() {
-  if (!API_URL) return { connected: false, oauth_configured: false };
+/** GitHub App install (Weave-style) — recommended for org-wide webhooks. */
+export function installGithubAppUrl(): string {
+  return "/api/github/app/install";
+}
+
+export type GithubStatus = {
+  connected: boolean;
+  mode?: "app" | "oauth" | null;
+  webhooks?: boolean;
+  oauth_configured?: boolean;
+  app_configured?: boolean;
+  login?: string;
+  repos?: string[];
+  repos_count?: number;
+};
+
+export async function fetchGithubStatus(): Promise<GithubStatus> {
+  if (!API_URL) return { connected: false, oauth_configured: false, app_configured: false };
   const res = await fetch(`${API_URL}/v1/connect/github/status`, {
     headers: await outcomeLedgerHeaders(),
     cache: "no-store",
   });
-  if (!res.ok) return { connected: false, oauth_configured: false };
+  if (!res.ok) return { connected: false, oauth_configured: false, app_configured: false };
   return res.json();
 }
 

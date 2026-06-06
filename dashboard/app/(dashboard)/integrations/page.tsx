@@ -11,6 +11,7 @@ import {
   connectGithubUrl,
   fetchAvailableRepos,
   fetchGithubStatus,
+  installGithubAppUrl,
 } from "@/lib/github-api";
 import { cn } from "@/lib/cn";
 
@@ -25,7 +26,7 @@ const statusLabel = {
 export default async function IntegrationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ github?: string; login?: string }>;
+  searchParams: Promise<{ github?: string; github_app?: string; login?: string; repos?: string }>;
 }) {
   const [params, overview, mappings, githubStatus, available] = await Promise.all([
     searchParams,
@@ -44,7 +45,12 @@ export default async function IntegrationsPage({
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader title="Connect">
         Link GitHub and your AI tools, then sync to see spend and wins.
-        {params.github === "connected" && params.login ? (
+        {params.github_app === "connected" && params.login ? (
+          <span className="mt-2 block theme-accent">
+            GitHub App installed for {params.login}
+            {params.repos ? ` — ${params.repos} repos with webhooks live` : ""}.
+          </span>
+        ) : params.github === "connected" && params.login ? (
           <span className="mt-2 block theme-accent">
             GitHub connected as {params.login}. Pick repos below.
           </span>
@@ -61,6 +67,7 @@ export default async function IntegrationsPage({
 
       <GitHubConnectPanel
         connectUrl={connectGithubUrl()}
+        installAppUrl={installGithubAppUrl()}
         status={githubStatus}
         availableRepos={available.repos || []}
       />

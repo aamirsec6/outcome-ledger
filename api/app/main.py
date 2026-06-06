@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -22,6 +23,7 @@ from app.tenant_api_keys import (
 )
 from app.onboarding import build_onboarding_status
 from app.org_credentials import connections_summary, save_connection
+from app.github_app import app_configured, build_install_url, refresh_installation_repos
 from app.github_oauth import (
     _dashboard_url,
     build_authorize_url,
@@ -29,13 +31,14 @@ from app.github_oauth import (
     fetch_accessible_repos,
     fetch_github_user,
     get_github_connection,
-    github_status,
     merge_repo_lists,
     parse_repos_json,
     save_github_connection,
     verify_oauth_state,
     verify_repo_access,
 )
+from app.github_status import combined_github_status
+from app.github_webhooks import complete_app_install, handle_github_webhook, verify_webhook_signature
 from app.ingest_csv import ingest_usage_csv
 from app.ingest_push import (
     build_ingest_status,
@@ -1129,20 +1132,89 @@ def connect_github_callback(code: str | None = None, state: str | None = None):
 def connect_github_status():
     with get_db() as db:
         org_id = ensure_default_org(db)
-        return github_status(db, org_id)
+        return combined_github_status(db, org_id)
+
+
+@app.get("/v1/connect/github-app/install", dependencies=[Depends(require_tenant_auth)])
+def connect_github_app_install_url():
+    if not app_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="GitHub App not configured (GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, GITHUB_APP_SLUG)",
+        )
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+    return {"installUrl": build_install_url(org_id)}
+
+
+@app.get("/v1/connect/github-app/callback")
+def connect_github_app_callback(
+    installation_id: int | None = None,
+    setup_action: str | None = None,
+    state: str | None = None,
+):
+    if not installation_id or not state:
+        raise HTTPException(status_code=400, detail="Missing installation_id or state")
+    org_id = verify_oauth_state(state)
+    if not org_id:
+        raise HTTPException(status_code=400, detail="Invalid install state")
+
+    with get_db() as db:
+        result = complete_app_install(db, org_id=org_id, installation_id=installation_id)
+
+    login = result.get("login") or "github"
+    return RedirectResponse(
+        url=f"{_dashboard_url()}/integrations?github_app=connected&login={login}&repos={result.get('repos_count', 0)}",
+        status_code=302,
+    )
+
+
+@app.post("/v1/webhooks/github")
+async def github_webhook(request: Request):
+    body = await request.body()
+    sig = request.headers.get("X-Hub-Signature-256")
+    if not verify_webhook_signature(body, sig):
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    event = request.headers.get("X-GitHub-Event") or "unknown"
+    try:
+        payload = json.loads(body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid JSON") from exc
+
+    with get_db() as db:
+        result = handle_github_webhook(db, event, payload)
+    return result
 
 
 @app.get("/v1/connect/github/repos/available", dependencies=[Depends(require_tenant_auth)])
 def connect_github_repos_available():
+    from app.github_app import get_app_connection
+
     with get_db() as db:
         org_id = ensure_default_org(db)
+        app_row = get_app_connection(db, org_id)
+        if app_row is not None:
+            saved = parse_repos_json(app_row.repos_json)
+            repos = [{"full_name": n, "private": None} for n in saved]
+            return {"repos": repos, "count": len(repos), "mode": "app"}
         row = get_github_connection(db, org_id)
         if row is None:
             raise HTTPException(status_code=404, detail="GitHub not connected")
         listed = fetch_accessible_repos(row.access_token)
         saved = parse_repos_json(row.repos_json)
         repos = merge_repo_lists(listed, saved)
-    return {"repos": repos, "count": len(repos)}
+    return {"repos": repos, "count": len(repos), "mode": "oauth"}
+
+
+@app.post("/v1/connect/github-app/refresh-repos", dependencies=[Depends(require_tenant_auth)])
+def connect_github_app_refresh_repos():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        repos = refresh_installation_repos(db, org_id)
+    if not repos:
+        raise HTTPException(status_code=404, detail="GitHub App not installed")
+    return {"ok": True, "repos": repos, "count": len(repos)}
 
 
 @app.post("/v1/connect/github/repos/verify", dependencies=[Depends(require_tenant_auth)])

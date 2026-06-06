@@ -55,6 +55,10 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skip deploy (add GitHub secret or deploy via Railway GitHub integration)"
+            exit 0
+          fi
           railway link --project outcome-ledger --environment production --service outcome-ledger
           railway up api --path-as-root --detach
 
@@ -70,6 +74,10 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skip deploy (add GitHub secret or deploy via Railway GitHub integration)"
+            exit 0
+          fi
           railway link --project outcome-ledger --environment production --service outcome-ledger-dashboard
           railway up dashboard --path-as-root --detach
 
@@ -85,5 +93,9 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "RAILWAY_TOKEN not set — skip deploy (add GitHub secret or deploy via Railway GitHub integration)"
+            exit 0
+          fi
           railway link --project outcome-ledger --environment production --service outcome-ledger-landing
           railway up landing --path-as-root --detach

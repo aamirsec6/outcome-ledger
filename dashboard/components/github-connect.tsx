@@ -2,22 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Github, Loader2 } from "lucide-react";
+import { Github, Loader2, Zap } from "lucide-react";
+import type { GithubStatus } from "@/lib/github-api";
 
 type Repo = { full_name: string; private?: boolean };
 
 export function GitHubConnectPanel({
   connectUrl,
+  installAppUrl,
   status,
   availableRepos,
 }: {
   connectUrl: string;
-  status: {
-    connected: boolean;
-    login?: string;
-    repos?: string[];
-    oauth_configured?: boolean;
-  };
+  installAppUrl: string;
+  status: GithubStatus;
   availableRepos: Repo[];
 }) {
   const router = useRouter();
@@ -26,7 +24,7 @@ export function GitHubConnectPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [manualRepo, setManualRepo] = useState("");
-
+  const isApp = status.mode === "app";
   const repoOptions = useMemo(() => {
     const names = new Set<string>();
     for (const r of availableRepos) {
@@ -41,6 +39,39 @@ export function GitHubConnectPanel({
     if (!q) return repoOptions;
     return repoOptions.filter((n) => n.toLowerCase().includes(q));
   }, [repoOptions, search]);
+
+  async function startAppInstall() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch(installAppUrl);
+      const data = await res.json();
+      if (!res.ok || !data.installUrl) {
+        setMessage(data.error || data.detail || "Could not start GitHub App install");
+        return;
+      }
+      window.location.href = data.installUrl;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function refreshAppRepos() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/github/app/refresh-repos", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.error || "Refresh failed");
+        return;
+      }
+      setMessage(`Refreshed ${data.count} repos from GitHub App installation.`);
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function addManualRepo() {
     const name = manualRepo.trim();
@@ -71,22 +102,24 @@ export function GitHubConnectPanel({
   }
 
   async function saveAndSync() {
-    if (selected.length === 0) {
+    if (!isApp && selected.length === 0) {
       setMessage("Pick at least one repository.");
       return;
     }
     setBusy(true);
     setMessage(null);
     try {
-      const saveRes = await fetch("/api/github/repos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repos: selected }),
-      });
-      const saveData = await saveRes.json();
-      if (!saveRes.ok) {
-        setMessage(saveData.detail || saveData.error || "Failed to save repos");
-        return;
+      if (!isApp) {
+        const saveRes = await fetch("/api/github/repos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ repos: selected }),
+        });
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) {
+          setMessage(saveData.detail || saveData.error || "Failed to save repos");
+          return;
+        }
       }
       const syncRes = await fetch("/api/github/sync", { method: "POST" });
       const syncData = await syncRes.json();
@@ -103,8 +136,8 @@ export function GitHubConnectPanel({
       const n = syncData.github?.inserted ?? syncData.inserted ?? 0;
       setMessage(
         parts
-          ? `Synced ${n} wins (${parts}). Re-run if you just added a repo.`
-          : `Synced ${n} wins from ${selected.length} repo(s).`,
+          ? `Synced ${n} wins (${parts}).`
+          : `Synced ${n} wins from ${isApp ? status.repos_count : selected.length} repo(s).`,
       );
       router.refresh();
     } finally {
@@ -112,38 +145,101 @@ export function GitHubConnectPanel({
     }
   }
 
-  if (!status.oauth_configured && !status.connected) {
-    return (
-      <p className="rounded-lg bg-warm-dim px-4 py-3 text-sm">
-        GitHub OAuth is not configured on the API yet. Add{" "}
-        <code className="theme-code">GITHUB_OAUTH_CLIENT_ID</code> and{" "}
-        <code className="theme-code">GITHUB_OAUTH_CLIENT_SECRET</code> on the API
-        service, then create a GitHub OAuth App.
-      </p>
-    );
-  }
-
   if (!status.connected) {
+    const canApp = status.app_configured;
+    const canOauth = status.oauth_configured;
+
+    if (!canApp && !canOauth) {
+      return (
+        <p className="rounded-lg bg-warm-dim px-4 py-3 text-sm">
+          GitHub is not configured on the API. Add GitHub App env vars (
+          <code className="theme-code">GITHUB_APP_ID</code>,{" "}
+          <code className="theme-code">GITHUB_APP_PRIVATE_KEY</code>) or OAuth (
+          <code className="theme-code">GITHUB_OAUTH_CLIENT_ID</code>).
+        </p>
+      );
+    }
+
     return (
-      <section className="theme-panel p-5">
+      <section className="theme-panel space-y-4 p-5">
         <div className="flex items-center gap-3">
           <Github className="theme-icon h-8 w-8 shrink-0" />
           <div>
             <h2 className="theme-heading text-base font-medium">GitHub</h2>
             <p className="text-sm theme-text-muted">
-              Sign in with GitHub — we track shipped work from your repos. No token
-              copy-paste.
+              Track merged PRs as wins. Install the app for real-time webhooks (recommended).
             </p>
           </div>
         </div>
-        <a
-          href={connectUrl}
-          className="theme-btn-primary mt-4"
-          style={{ background: "var(--text)", color: "var(--bg-card)" }}
-        >
-          <Github className="h-4 w-4" />
-          Connect with GitHub
-        </a>
+
+        {canApp ? (
+          <div className="theme-inset space-y-3 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-sm font-medium" style={{ color: "var(--text)" }}>
+              <Zap className="h-4 w-4 text-emerald-400" />
+              Recommended — GitHub App
+            </div>
+            <p className="text-xs theme-text-muted">
+              Org-level install like Weave. Real-time merge webhooks, auto repo access, PR cost comments.
+            </p>
+            <button
+              type="button"
+              onClick={startAppInstall}
+              disabled={busy}
+              className="theme-btn-primary"
+              style={{ background: "var(--text)", color: "var(--bg-card)" }}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+              Install Outcome Ledger on GitHub
+            </button>
+          </div>
+        ) : null}
+
+        {canOauth ? (
+          <div className="space-y-2">
+            <p className="text-xs theme-text-dim">Or connect with personal OAuth (manual repo picker):</p>
+            <a href={connectUrl} className="theme-btn-secondary inline-flex">
+              <Github className="h-4 w-4" />
+              Connect with GitHub OAuth
+            </a>
+          </div>
+        ) : null}
+
+        {message ? <p className="theme-message">{message}</p> : null}
+      </section>
+    );
+  }
+
+  if (isApp) {
+    return (
+      <section className="theme-panel space-y-4 border-[color-mix(in_srgb,var(--accent)_35%,transparent)] p-5">
+        <div>
+          <p className="flex items-center gap-2 text-sm theme-accent">
+            <Zap className="h-4 w-4" />
+            GitHub App installed as <span className="font-medium">{status.login}</span>
+          </p>
+          <p className="mt-1 text-xs theme-text-dim">
+            Webhooks live — merged PRs ingest in real time. {status.repos_count ?? 0} repos
+            from your installation.
+          </p>
+        </div>
+        <ul className="theme-inset max-h-40 space-y-1 overflow-y-auto p-2 text-xs theme-text-muted">
+          {(status.repos || []).slice(0, 30).map((name) => (
+            <li key={name}>{name}</li>
+          ))}
+          {(status.repos_count ?? 0) > 30 ? (
+            <li className="theme-text-dim">…and {(status.repos_count ?? 0) - 30} more</li>
+          ) : null}
+        </ul>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={refreshAppRepos} disabled={busy} className="theme-btn-secondary">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Refresh repos
+          </button>
+          <button type="button" onClick={saveAndSync} disabled={busy} className="theme-btn-primary">
+            Backfill sync
+          </button>
+        </div>
+        {message ? <p className="theme-message">{message}</p> : null}
       </section>
     );
   }
@@ -152,11 +248,14 @@ export function GitHubConnectPanel({
     <section className="theme-panel space-y-4 border-[color-mix(in_srgb,var(--accent)_35%,transparent)] p-5">
       <div>
         <p className="text-sm theme-accent">
-          Connected as <span className="font-medium">{status.login}</span>
+          Connected via OAuth as <span className="font-medium">{status.login}</span>
         </p>
         <p className="mt-1 text-xs theme-text-dim">
-          Choose repos to track shipped work. Missing a repo? Re-connect
-          GitHub below or add by name.
+          Choose repos to track. For webhooks, switch to{" "}
+          <button type="button" onClick={startAppInstall} className="theme-accent hover:underline">
+            GitHub App install
+          </button>
+          .
         </p>
         <a href={connectUrl} className="theme-accent mt-2 inline-block text-xs hover:underline">
           Re-connect GitHub (refresh repo access)
@@ -177,12 +276,7 @@ export function GitHubConnectPanel({
           placeholder="aamirsec6/outcome-ledger"
           className="theme-input min-w-0 flex-1"
         />
-        <button
-          type="button"
-          onClick={addManualRepo}
-          disabled={busy}
-          className="theme-btn-secondary shrink-0"
-        >
+        <button type="button" onClick={addManualRepo} disabled={busy} className="theme-btn-secondary shrink-0">
           Add repo
         </button>
       </div>
@@ -204,9 +298,7 @@ export function GitHubConnectPanel({
                 checked={selected.includes(name)}
                 onChange={(e) => {
                   setSelected((prev) =>
-                    e.target.checked
-                      ? [...prev, name]
-                      : prev.filter((x) => x !== name),
+                    e.target.checked ? [...prev, name] : prev.filter((x) => x !== name),
                   );
                 }}
                 className="accent-[var(--accent)]"
@@ -216,12 +308,7 @@ export function GitHubConnectPanel({
           ))
         )}
       </div>
-      <button
-        type="button"
-        onClick={saveAndSync}
-        disabled={busy}
-        className="theme-btn-primary"
-      >
+      <button type="button" onClick={saveAndSync} disabled={busy} className="theme-btn-primary">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
         Save repos & sync
       </button>

@@ -30,7 +30,7 @@
 | # | Deliverable |
 |---|-------------|
 | B1 | Platform-hosted GitHub OAuth (one app for all customers) |
-| B2 | GitHub App + webhooks (merge events) |
+| B2 | GitHub App + webhooks (merge events) | ✅ App install + `POST /v1/webhooks/github` |
 | B3 | SSO (WorkOS / Auth0) + RBAC |
 | B4 | Encrypted credentials (KMS) |
 | B5 | Connect wizard (org → teams → vendors → coverage %) |

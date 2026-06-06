@@ -72,6 +72,7 @@ See [docs/mcp-setup.md](docs/mcp-setup.md), [docs/agent-setup-one-pager.md](docs
 - [Moat strategy](docs/moat.md)
 - [Enterprise roadmap](docs/enterprise-roadmap.md)
 - [Alerts & digest setup](docs/notifications-setup.md) — Slack, weekly email, GitHub PR comments
+- [GitHub App setup](docs/github-app-setup.md) — Weave-style install + webhooks
 
 ## License
 

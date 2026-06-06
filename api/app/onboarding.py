@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from app.github_oauth import github_status
+from app.github_status import combined_github_status
 from app.metrics import build_overview
 from app.org_credentials import connections_summary, vendor_configured_for_org
 from app.org_profile import org_profile_payload
@@ -15,7 +15,7 @@ from app.team_mapping import list_team_mappings
 def build_onboarding_status(db: Session, org_id: str) -> dict:
     profile = org_profile_payload(db, org_id)
     connections = connections_summary(db, org_id)
-    github = github_status(db, org_id)
+    github = combined_github_status(db, org_id)
     teams = list_team_mappings(db, org_id)
     overview = build_overview(db, org_id, lookback_days=90)
     last_sync = last_sync_run(db, org_id)

@@ -46,7 +46,17 @@ export function SpendCsvUpload({
         setMessage(data.detail?.error || data.error || data.detail || "Import failed");
         return;
       }
-      setMessage(`Imported ${data.inserted ?? 0} row(s). Refreshing…`);
+      if (data.inserted > 0 && data.synced) {
+        setMessage(
+          `Imported ${data.inserted} row(s) and synced — cost per win should update on Overview.`,
+        );
+      } else if (data.inserted > 0) {
+        setMessage(
+          `Imported ${data.inserted} row(s). Hit Sync on Integrations if cost per win is still $0.`,
+        );
+      } else {
+        setMessage("No new rows imported — check date and cost_usd columns.");
+      }
       router.refresh();
     } finally {
       setBusy(false);

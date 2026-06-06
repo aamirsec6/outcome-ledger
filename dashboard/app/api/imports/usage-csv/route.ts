@@ -36,5 +36,19 @@ export async function POST(request: Request) {
   if (!res.ok) {
     return NextResponse.json(data, { status: res.status });
   }
+
+  if (data.inserted > 0) {
+    const syncRes = await fetch(`${API_URL}/v1/sync`, {
+      method: "POST",
+      headers,
+    });
+    const syncData = await syncRes.json().catch(() => ({}));
+    return NextResponse.json({
+      ...data,
+      synced: syncRes.ok,
+      syncError: syncRes.ok ? undefined : syncData.detail || syncData.error,
+    });
+  }
+
   return NextResponse.json(data);
 }

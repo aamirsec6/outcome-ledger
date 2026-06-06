@@ -50,6 +50,15 @@ _LEGACY_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
 ]
 
 
+def _column_sql_type(sql_type: str) -> str:
+    """Map generic migration types to dialect-specific SQL."""
+    if sql_type != "DATETIME":
+        return sql_type
+    if DATABASE_URL.startswith("sqlite"):
+        return "DATETIME"
+    return "TIMESTAMP WITH TIME ZONE"
+
+
 def _migrate_legacy_columns() -> None:
     """Add columns on existing Postgres/SQLite DBs without Alembic."""
     insp = inspect(engine)
@@ -61,7 +70,8 @@ def _migrate_legacy_columns() -> None:
             continue
         cols = {c["name"] for c in insp.get_columns(table)}
         if column not in cols:
-            stmts.append(f"ALTER TABLE {table} ADD COLUMN {column} {sql_type}")
+            col_type = _column_sql_type(sql_type)
+            stmts.append(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
 
     if not stmts:
         return

@@ -1,3 +1,4 @@
+import { AiAdoptionPanel } from "@/components/ai-adoption-panel";
 import { AttributionBanner } from "@/components/attribution-banner";
 import { AttributionOverridePanel } from "@/components/attribution-override-panel";
 import { BenchmarkPanel } from "@/components/benchmark-panel";
@@ -7,7 +8,13 @@ import { OutcomeGraphPanel } from "@/components/outcome-graph-panel";
 import { PageHeader } from "@/components/page-header";
 import { SetupRequired } from "@/components/setup-required";
 import { WinsPanel } from "@/components/wins-panel";
-import { fetchAttribution, fetchBenchmarks, fetchOverview, fetchWins } from "@/lib/api";
+import {
+  fetchAiAdoption,
+  fetchAttribution,
+  fetchBenchmarks,
+  fetchOverview,
+  fetchWins,
+} from "@/lib/api";
 import {
   attributionInsight,
   cpstTrendInsight,
@@ -18,11 +25,12 @@ import { pct, usd, usdCpst } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const [data, winsData, attribution, benchmarks] = await Promise.all([
+  const [data, winsData, attribution, benchmarks, aiAdoption] = await Promise.all([
     fetchOverview(),
     fetchWins(),
     fetchAttribution(),
     fetchBenchmarks(),
+    fetchAiAdoption(),
   ]);
 
   const needsSetup =
@@ -54,6 +62,8 @@ export default async function OverviewPage() {
       <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
 
       <BenchmarkPanel report={benchmarks} />
+
+      <AiAdoptionPanel report={aiAdoption} />
 
       <AttributionOverridePanel />
 

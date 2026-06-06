@@ -80,3 +80,10 @@ class OutcomeLedgerClient:
             )
             resp.raise_for_status()
             return resp.json()
+
+    def trigger_cloud_sync(self) -> dict[str, Any]:
+        """Rebuild attribution graph after MCP ingest pushes."""
+        with httpx.Client(timeout=300.0) as client:
+            resp = client.post(f"{self.base}/v1/sync", headers=self._headers())
+            resp.raise_for_status()
+            return resp.json()

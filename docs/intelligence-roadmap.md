@@ -26,6 +26,18 @@
 | **Override UI** | `AttributionOverridePanel` | Review low-confidence links; `GET /v1/attribution/candidates` |
 | **Graph v3** | `attribution_engine.py` | ML-weighted proportional allocation when linker trained |
 
+## Shipped (v0.5 — Cursor Team ready)
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| **Cursor billing ingest** | `ingest_cursor_billing.py` | Admin API daily spend → `usage_events` |
+| **Cursor AI line tracking** | `ingest_cursor_ai.py` | Per-commit AI/human lines → `commit_ai_metrics` |
+| **PR code attribution** | `pr_code_attribution.py` | Roll up to outcomes; API > git trailer > estimate |
+| **AI adoption panel** | `ai-adoption-panel.tsx` | Output, tool adoption, AI vs human code bar |
+| **Cursor connect UI** | `cursor-connect.tsx` | Admin API key + probe (ready before Team plan) |
+
+See [cursor-team-setup.md](cursor-team-setup.md).
+
 ## Next (Phase 3)
 
 1. **Linear/Jira linker** — ticket ↔ PR ↔ trace graph  

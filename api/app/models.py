@@ -185,6 +185,49 @@ class AttributionLink(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
+class CommitAiMetrics(Base):
+    """Per-commit AI vs human line counts (Cursor API or inferred)."""
+
+    __tablename__ = "commit_ai_metrics"
+    __table_args__ = (
+        UniqueConstraint("org_id", "commit_hash", name="uq_commit_ai_metrics"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(index=True)
+    commit_hash: Mapped[str] = mapped_column(String(64), index=True)
+    repo: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    ai_lines_added: Mapped[int] = mapped_column(default=0)
+    human_lines_added: Mapped[int] = mapped_column(default=0)
+    total_lines_added: Mapped[int] = mapped_column(default=0)
+    ai_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    source: Mapped[str] = mapped_column(String(32), default="cursor_api")
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class PrCodeAttribution(Base):
+    """AI vs human code split rolled up to a merged PR / outcome."""
+
+    __tablename__ = "pr_code_attribution"
+    __table_args__ = (
+        UniqueConstraint("org_id", "outcome_event_id", name="uq_pr_code_attr"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(index=True)
+    outcome_event_id: Mapped[str] = mapped_column(String(36), index=True)
+    ai_lines_added: Mapped[int] = mapped_column(default=0)
+    human_lines_added: Mapped[int] = mapped_column(default=0)
+    total_lines_added: Mapped[int] = mapped_column(default=0)
+    ai_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    method: Mapped[str] = mapped_column(String(32), default="unavailable")
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    commit_count: Mapped[int] = mapped_column(default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class LinkerModel(Base):
     """Per-org logistic regression weights for learned attribution."""
 

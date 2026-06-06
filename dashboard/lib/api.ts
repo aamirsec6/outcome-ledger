@@ -347,6 +347,74 @@ export type BenchmarkReport = {
   };
 };
 
+export type AiAdoptionReport = {
+  periodLabel: string;
+  method: string;
+  methodNote: string;
+  shippedWork: {
+    stableOutcomes: number;
+    outcomesPerWeek: number;
+    weeklyTrend: { week: string; outcomes: number }[];
+  };
+  aiVsHuman: {
+    aiAssistedOutcomes: number;
+    humanOnlyOutcomes: number;
+    unknownAuthorOutcomes: number;
+    aiAssistedPct: number;
+    confidence: string;
+  };
+  adoptionByTool: {
+    toolId: string;
+    toolName: string;
+    spendUsd: number;
+    spendSharePct: number;
+    activeUsers: number;
+    eventCount: number;
+  }[];
+  adoptionSummary: {
+    activeAiUsers: number;
+    distinctAuthors: number;
+    toolsInUse: number;
+    totalSpendUsd: number;
+    adoptionRatePct: number;
+  };
+  byTeam: {
+    teamId: string;
+    teamName: string;
+    outcomes: number;
+    aiAssistedOutcomes: number;
+    aiAssistedPct: number;
+    spendUsd: number;
+  }[];
+  codeAttribution?: {
+    available: boolean;
+    reason?: string;
+    aiLines?: number;
+    humanLines?: number;
+    totalLines?: number;
+    aiPct?: number;
+    humanPct?: number;
+    prsCounted?: number;
+    highConfidencePrs?: number;
+    byMethod?: Record<string, number>;
+    confidenceNote?: string;
+  };
+};
+
+export async function fetchAiAdoption(): Promise<AiAdoptionReport | null> {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/metrics/ai-adoption`, {
+      headers: await outcomeLedgerHeaders(),
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchBenchmarks(): Promise<BenchmarkReport | null> {
   if (!API_URL) return null;
   try {

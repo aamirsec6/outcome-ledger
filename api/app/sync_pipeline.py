@@ -13,7 +13,10 @@ from app.ingest_openai import ingest_openai_costs
 from app.attribution_engine import rebuild_attribution_graph
 from app.benchmarks import build_benchmark_report
 from app.cpst_history import record_cpst_snapshots
+from app.ingest_cursor_ai import ingest_cursor_commit_metrics
+from app.ingest_cursor_billing import ingest_cursor_billing
 from app.ingest_langfuse import ingest_langfuse_traces
+from app.pr_code_attribution import rebuild_pr_code_attribution
 from app.learned_linker import train_linker_model
 from app.network_benchmarks import publish_org_benchmark
 from app.org_profile import org_profile_payload
@@ -35,6 +38,12 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
         results["langfuse"] = ingest_langfuse_traces(
             db, org_id=org_id, lookback_days=lookback
         )
+        results["cursorBilling"] = ingest_cursor_billing(
+            db, org_id=org_id, lookback_days=lookback
+        )
+        results["cursorAiTracking"] = ingest_cursor_commit_metrics(
+            db, org_id=org_id, lookback_days=lookback
+        )
         win_type = primary_win_type(db, org_id)
         if win_type == WIN_TYPE_COMMIT:
             results["github"] = ingest_github_default_branch_commits(
@@ -53,6 +62,9 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
         results["winType"] = win_type
         ensure_default_contract(db, org_id)
         results["attributionGraph"] = rebuild_attribution_graph(
+            db, org_id, lookback_days=lookback
+        )
+        results["codeAttribution"] = rebuild_pr_code_attribution(
             db, org_id, lookback_days=lookback
         )
         results["linkerModel"] = train_linker_model(db, org_id)

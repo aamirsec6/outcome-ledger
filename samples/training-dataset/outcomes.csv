@@ -1,0 +1,13 @@
+external_id,outcome_type,date,repo,pr_number,team_id,title
+oc-plat-101,pr_merged_stable,2026-05-08,acme/platform-api,101,eng-platform,fix: auth token refresh
+oc-plat-102,pr_merged_stable,2026-05-12,acme/platform-api,102,eng-platform,feat: rate limiter
+oc-plat-103,pr_merged_stable,2026-05-18,acme/platform-api,103,eng-platform,fix: checkout timeout
+oc-plat-104,pr_merged_stable,2026-05-28,acme/platform-api,104,eng-platform,chore: dependency bump
+oc-mob-201,pr_merged_stable,2026-05-09,acme/mobile-app,201,eng-mobile,fix: crash on launch
+oc-mob-202,pr_merged_stable,2026-05-15,acme/mobile-app,202,eng-mobile,feat: dark mode
+oc-mob-203,pr_merged_stable,2026-05-22,acme/mobile-app,203,eng-mobile,fix: push notifications
+oc-mob-204,pr_merged_stable,2026-05-29,acme/mobile-app,204,eng-mobile,feat: offline sync
+oc-data-301,pr_merged_stable,2026-05-10,acme/data-pipeline,301,eng-data,fix: ETL duplicate rows
+oc-data-302,pr_merged_stable,2026-05-17,acme/data-pipeline,302,eng-data,feat: anomaly detector
+oc-data-303,pr_merged_stable,2026-05-24,acme/data-pipeline,303,eng-data,fix: schema migration
+oc-data-304,pr_merged_stable,2026-05-30,acme/data-pipeline,304,eng-data,chore: partition pruning

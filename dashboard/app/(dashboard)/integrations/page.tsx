@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle, Upload } from "lucide-react";
 import { AgentSetupCard } from "@/components/agent-setup-card";
 import { ConnectWizard } from "@/components/connect-wizard";
+import { CursorConnectPanel } from "@/components/cursor-connect";
 import { GitHubConnectPanel } from "@/components/github-connect";
 import { PageHeader } from "@/components/page-header";
 import { SectionCard } from "@/components/section-card";
@@ -107,6 +108,11 @@ export default async function IntegrationsPage({
         </ul>
 
         <div className="space-y-4 border-t border-[var(--border)] pt-4">
+          <CursorConnectPanel
+            configured={
+              others.find((i) => i.id === "cursor")?.status === "connected"
+            }
+          />
           <SpendCsvUpload
             source="openai"
             label="OpenAI"

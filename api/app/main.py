@@ -63,6 +63,7 @@ from app.attribution_engine import (
     list_link_candidates,
     rebuild_attribution_graph,
 )
+from app.ai_adoption import build_ai_adoption_report
 from app.benchmarks import build_benchmark_report
 from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
 from app.notification_settings import (
@@ -168,6 +169,10 @@ class OpenAIConnectionPayload(BaseModel):
 
 
 class AnthropicConnectionPayload(BaseModel):
+    apiKey: str
+
+
+class CursorConnectionPayload(BaseModel):
     apiKey: str
 
 
@@ -318,6 +323,32 @@ def connections_anthropic(payload: AnthropicConnectionPayload):
             config={},
         )
     return {"ok": True, "provider": "anthropic"}
+
+
+@app.put("/v1/connections/cursor", dependencies=[Depends(require_tenant_auth)])
+def connections_cursor(payload: CursorConnectionPayload):
+    key = (payload.apiKey or "").strip()
+    if not key:
+        raise HTTPException(status_code=400, detail="apiKey is required")
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        save_connection(
+            db,
+            org_id=org_id,
+            provider="cursor",
+            access_token=key,
+            config={},
+        )
+    return {"ok": True, "provider": "cursor"}
+
+
+@app.get("/v1/jobs/cursor-probe", dependencies=[Depends(require_tenant_auth)])
+def job_cursor_probe():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        from app.ingest_cursor_ai import probe_cursor_ai_tracking
+
+        return probe_cursor_ai_tracking(db, org_id)
 
 
 @app.get("/health")
@@ -969,6 +1000,14 @@ def metrics_benchmarks():
     with get_db() as db:
         org_id = ensure_default_org(db)
         return build_benchmark_report(db, org_id, lookback_days=lookback)
+
+
+@app.get("/v1/metrics/ai-adoption", dependencies=[Depends(require_tenant_auth)])
+def metrics_ai_adoption():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_ai_adoption_report(db, org_id, lookback_days=lookback)
 
 
 @app.post("/v1/attribution/rebuild", dependencies=[Depends(require_tenant_auth)])

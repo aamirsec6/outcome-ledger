@@ -143,6 +143,11 @@ class SyncManager:
 
         if usage_events or outcome_events:
             self.client.sync_complete(usage_push, outcome_push)
+            try:
+                result["cloudSync"] = self.client.trigger_cloud_sync()
+            except Exception as exc:
+                self.log.warning("Cloud sync after ingest failed: %s", exc)
+                result["cloudSync"] = {"ok": False, "error": str(exc)}
 
         result["usagePush"] = usage_push
         result["outcomePush"] = outcome_push

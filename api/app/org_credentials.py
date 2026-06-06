@@ -74,6 +74,16 @@ def get_openai_credentials(db: Session, org_id: str) -> dict[str, str]:
     }
 
 
+def get_cursor_credentials(db: Session, org_id: str) -> dict[str, str]:
+    row = get_connection(db, org_id, "cursor")
+    if row and row.access_token:
+        return {"api_key": row.access_token, "source": "database"}
+    return {
+        "api_key": (os.getenv("CURSOR_ADMIN_API_KEY") or "").strip(),
+        "source": "env",
+    }
+
+
 def get_anthropic_credentials(db: Session, org_id: str) -> dict[str, str]:
     row = get_connection(db, org_id, "anthropic")
     if row and row.access_token:
@@ -94,6 +104,9 @@ def vendor_configured_for_org(db: Session, org_id: str, vendor: str) -> bool:
     if vendor == "github":
         row = get_connection(db, org_id, "github")
         return bool(row and row.access_token)
+    if vendor == "cursor":
+        creds = get_cursor_credentials(db, org_id)
+        return bool(creds.get("api_key"))
     return False
 
 
@@ -115,5 +128,9 @@ def connections_summary(db: Session, org_id: str) -> dict[str, dict]:
         "github": {
             "configured": bool(github and github.access_token),
             "login": github.external_login if github else None,
+        },
+        "cursor": {
+            "configured": bool(get_cursor_credentials(db, org_id).get("api_key")),
+            "source": get_cursor_credentials(db, org_id).get("source"),
         },
     }

@@ -201,15 +201,25 @@ def build_overview(db: Session, org_id: str, *, lookback_days: int = 90) -> dict
     ]:
         if src == "github":
             connected = has_github
-        elif src in ("openai", "anthropic"):
-            connected = _vendor_configured(src, db, org_id)
+            status = "connected" if connected else "pending"
+        elif src in ("openai", "anthropic", "cursor"):
+            api_ok = _vendor_configured(src, db, org_id)
+            has_csv = src in usage_sources
+            connected = api_ok or has_csv
+            if api_ok:
+                status = "connected"
+            elif has_csv:
+                status = "csv"
+            else:
+                status = "pending"
         else:
             connected = src in usage_sources
+            status = "connected" if connected else "pending"
         integrations.append(
             {
                 "id": src,
                 "name": label,
-                "status": "connected" if connected else "pending",
+                "status": status,
             }
         )
 

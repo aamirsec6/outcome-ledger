@@ -1,0 +1,23 @@
+usage_external_id,outcome_external_id,label,split,notes
+us-plat-101a,oc-plat-101,1,train,repo+pr+team match 1d before merge
+us-plat-102a,oc-plat-102,1,train,repo+pr+team match 1d before merge
+us-plat-103a,oc-plat-103,1,train,repo+pr+team match 1d before merge
+us-mob-201a,oc-mob-201,1,train,repo+pr+team match 1d before merge
+us-mob-202a,oc-mob-202,1,train,repo+pr+team match 1d before merge
+us-data-301a,oc-data-301,1,train,repo+pr+team match 1d before merge
+us-data-302a,oc-data-302,1,train,repo+pr+team match 1d before merge
+us-mob-201b,oc-mob-201,1,train,openai spend same day as merge
+us-plat-103b,oc-plat-103,1,test,held-out positive
+us-data-302b,oc-data-302,1,test,held-out positive
+us-mob-204a,oc-mob-204,1,test,held-out positive
+us-plat-104a,oc-plat-104,1,test,held-out positive
+us-data-303a,oc-data-303,1,test,held-out positive
+us-mob-203a,oc-mob-203,1,test,held-out positive
+us-noise-org,oc-plat-101,0,train,org-level spend should not tie to one PR
+us-wrong-repo,oc-plat-102,0,train,wrong repo
+us-off-window,oc-plat-101,0,train,spend outside attribution window
+us-noise-org,oc-mob-201,0,test,org noise vs unrelated PR
+us-wrong-repo,oc-data-302,0,test,wrong repo vs unrelated outcome
+us-off-window,oc-data-304,0,test,spend too early for late merge
+us-plat-101a,oc-mob-201,0,test,correct spend wrong outcome (cross-team)
+us-mob-201a,oc-plat-103,0,test,cross-repo negative

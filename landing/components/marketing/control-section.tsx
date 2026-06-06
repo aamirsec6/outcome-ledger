@@ -7,41 +7,42 @@ import {
   LineChart,
 } from "lucide-react";
 import { InteractiveIconCard } from "./interactive-icon-card";
+import { PageContainer } from "@/components/marketing/page-container";
 
 const CONTROLS = [
   {
-    title: "Attribution coverage",
-    desc: "See attributed vs unassigned spend by vendor. Team mappings raise board-ready coverage past 80%.",
+    title: "Spend linked to wins",
+    desc: "See which dollars attached to which shipped work, and what is still unassigned.",
     icon: Link2,
     accent: "cyan" as const,
   },
   {
-    title: "Full visibility",
-    desc: "Sync runs, outcome events, and contract versions in one audit trail — every dollar traceable.",
+    title: "Full audit trail",
+    desc: "Every sync logged. Every number traceable back to a vendor bill and a definition of win.",
     icon: Eye,
     accent: "emerald" as const,
   },
   {
-    title: "Signed methodology",
-    desc: "CFO attestation on active outcome contracts. PDF appendix includes formula version.",
+    title: "Signed definitions",
+    desc: "Your CFO agrees what counts as a win. That definition travels with every board export.",
     icon: FileSignature,
     accent: "amber" as const,
   },
   {
-    title: "Revert detection",
-    desc: "Stable outcomes exclude PRs reverted within your window. CPST stays honest.",
+    title: "Honest wins only",
+    desc: "Rollbacks do not count. A win means work that stayed shipped, not code that got undone.",
     icon: GitBranch,
     accent: "cyan" as const,
   },
   {
-    title: "Vendor ingest",
-    desc: "OpenAI, Anthropic, GitHub, Cursor CSV — no custom agent instrumentation.",
+    title: "Connects to your stack",
+    desc: "OpenAI, Anthropic, GitHub, Cursor. Plug in what you already use.",
     icon: BarChart3,
     accent: "emerald" as const,
   },
   {
-    title: "Intuitive trends",
-    desc: "Weekly CPST and monthly snapshots. Green when cost per win falls period over period.",
+    title: "Trends over time",
+    desc: "Watch cost per win week over week. Know when you are improving, not just spending more.",
     icon: LineChart,
     accent: "emerald" as const,
   },
@@ -49,31 +50,28 @@ const CONTROLS = [
 
 export function ControlSection() {
   return (
-    <section className="border-t border-[var(--border)] px-4 py-20 md:py-28">
-      <div className="mx-auto max-w-6xl text-center">
-        <h2 className="text-2xl font-medium tracking-tight text-white md:text-3xl">
-          Everything in your control
+    <section className="border-t border-[var(--border)] py-20 md:py-28">
+      <PageContainer>
+        <h2 className="text-3xl font-medium tracking-tight text-white md:text-4xl">
+          What you get
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-[var(--text-muted)]">
-          All the features you need to manage AI spend attribution, troubleshoot
-          with detailed logs, and protect board credibility — without spreadsheet
-          chaos.
+        <p className="mt-4 max-w-2xl text-[var(--text-muted)] lg:text-lg">
+          Everything needed to answer &ldquo;was the AI budget worth it?&rdquo; without building
+          spreadsheets or renegotiating definitions in every board meeting.
         </p>
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {CONTROLS.map((c) => (
             <article
               key={c.title}
-              className="group rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5 text-left transition hover:border-[var(--border-strong)]"
+              className="group rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 lg:p-7 text-left transition hover:border-[var(--border-strong)]"
             >
               <InteractiveIconCard icon={c.icon} accent={c.accent} />
-              <h3 className="font-medium text-white">{c.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">
-                {c.desc}
-              </p>
+              <h3 className="font-medium text-lg text-white">{c.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{c.desc}</p>
             </article>
           ))}
         </div>
-      </div>
+      </PageContainer>
     </section>
   );
 }

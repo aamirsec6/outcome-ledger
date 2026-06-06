@@ -1,13 +1,14 @@
 import { ArrowRight } from "lucide-react";
+import { PageContainer } from "@/components/marketing/page-container";
 
 export function FinalCta() {
   return (
-    <section className="border-t border-[var(--border)] px-4 py-24 md:py-32">
-      <div className="mx-auto max-w-3xl text-center">
+    <section className="border-t border-[var(--border)] py-24 md:py-32">
+      <PageContainer className="text-center">
         <h2 className="text-3xl font-medium tracking-tight text-white md:text-4xl">
-          CPST reimagined.
+          Stop guessing.
           <br />
-          Available today.
+          Start measuring wins.
         </h2>
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
@@ -24,7 +25,7 @@ export function FinalCta() {
             Contact us
           </a>
         </div>
-      </div>
+      </PageContainer>
     </section>
   );
 }

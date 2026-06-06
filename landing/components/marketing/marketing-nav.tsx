@@ -7,9 +7,10 @@ import { DashboardLink } from "@/components/dashboard-link";
 import { cn } from "@/lib/cn";
 
 const LINKS = [
-  { href: "#product", label: "Features" },
-  { href: "#use-cases", label: "Customers" },
-  { href: "#faq", label: "Help" },
+  { href: "#the-layer", label: "The layer" },
+  { href: "#product", label: "How it works" },
+  { href: "#use-cases", label: "Who it's for" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function MarketingNav({ spotsRemaining }: { spotsRemaining?: number }) {
@@ -32,7 +33,7 @@ export function MarketingNav({ spotsRemaining }: { spotsRemaining?: number }) {
           : "border-transparent bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center justify-between px-6 sm:px-10 lg:px-14 xl:px-20">
         <Link href="/" className="text-sm font-medium text-white">
           Outcome Ledger
         </Link>

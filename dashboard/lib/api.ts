@@ -66,6 +66,47 @@ export type OrgProfile = {
   headquarters?: string;
 };
 
+export type NotificationSettings = {
+  slackWebhookUrl: string;
+  slackAlertsEnabled: boolean;
+  digestEmails: string[];
+  digestEnabled: boolean;
+  monthlyBudgetUsd: number;
+  budgetAlertThresholdPct: number;
+  githubPrCommentsEnabled: boolean;
+  alertOnCpstSpike: boolean;
+  alertOnBudgetBurn: boolean;
+  alertOnInbox: boolean;
+};
+
+const defaultNotificationSettings: NotificationSettings = {
+  slackWebhookUrl: "",
+  slackAlertsEnabled: false,
+  digestEmails: [],
+  digestEnabled: false,
+  monthlyBudgetUsd: 0,
+  budgetAlertThresholdPct: 80,
+  githubPrCommentsEnabled: false,
+  alertOnCpstSpike: true,
+  alertOnBudgetBurn: true,
+  alertOnInbox: true,
+};
+
+export async function fetchNotificationSettings(): Promise<NotificationSettings> {
+  if (!API_URL) return defaultNotificationSettings;
+  try {
+    const res = await fetch(`${API_URL}/v1/settings/notifications`, {
+      headers: await outcomeLedgerHeaders(),
+      cache: "no-store",
+    });
+    if (!res.ok) return defaultNotificationSettings;
+    const data = await res.json();
+    return { ...defaultNotificationSettings, ...(data.settings ?? {}) };
+  } catch {
+    return defaultNotificationSettings;
+  }
+}
+
 export async function fetchOrgProfile(): Promise<OrgProfile> {
   if (!API_URL) {
     return { companyName: "Your organization" };

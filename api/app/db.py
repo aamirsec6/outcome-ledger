@@ -37,6 +37,8 @@ _LEGACY_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("outcome_events", "raw_json", "TEXT"),
     ("organizations", "win_definition", "TEXT"),
     ("organizations", "profile_json", "TEXT"),
+    ("organizations", "notifications_json", "TEXT"),
+    ("outcome_events", "cost_comment_posted_at", "DATETIME"),
     ("provider_connections", "config_json", "TEXT"),
     ("outcome_events", "workflow_type", "VARCHAR(32)"),
     ("cpst_snapshots", "linked_spend_pct", "FLOAT DEFAULT 0"),

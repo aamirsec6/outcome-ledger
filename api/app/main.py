@@ -62,6 +62,17 @@ from app.attribution_engine import (
 )
 from app.benchmarks import build_benchmark_report
 from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
+from app.notification_settings import (
+    get_notification_settings,
+    settings_payload_for_api,
+    update_notification_settings,
+)
+from app.notifications.delivery import (
+    deliver_weekly_digest_all_orgs,
+    deliver_weekly_digest_for_org,
+    list_all_org_ids,
+)
+from app.notifications.inbox import build_inbox_summary
 from app.org_profile import org_profile_payload, update_org_profile
 from app.outcome_contracts import (
     _approval_for_contract,
@@ -528,6 +539,33 @@ def cron_sync():
     return {"ok": True, "org_id": org_id, "results": results}
 
 
+@app.post("/v1/cron/sync-all", dependencies=[Depends(_require_cron_secret)])
+def cron_sync_all():
+    """Daily ingest for every workspace — preferred multi-tenant cron."""
+    org_results = []
+    with get_db() as db:
+        org_ids = list_all_org_ids(db)
+        for org_id in org_ids:
+            try:
+                results = run_full_sync(db, org_id, trigger="cron")
+                org_results.append({"orgId": org_id, "ok": results.get("ok"), "results": results})
+            except Exception as exc:
+                logging.getLogger(__name__).exception("cron sync failed org=%s", org_id)
+                org_results.append({"orgId": org_id, "ok": False, "error": str(exc)})
+    return {"ok": True, "orgs": org_results}
+
+
+@app.post("/v1/cron/weekly-digest", dependencies=[Depends(_require_cron_secret)])
+def cron_weekly_digest(force: bool = False):
+    """Monday weekly email digest — Railway cron: Mon 08:00 UTC. ?force=true to test."""
+    from datetime import datetime, timezone
+
+    if not force and datetime.now(timezone.utc).weekday() != 0:
+        return {"ok": True, "skipped": "not Monday — pass ?force=true to override"}
+    with get_db() as db:
+        return deliver_weekly_digest_all_orgs(db)
+
+
 @app.post("/v1/jobs/check-reverts", dependencies=[Depends(require_tenant_auth)])
 def job_check_reverts():
     with get_db() as db:
@@ -668,6 +706,85 @@ def put_org_profile(payload: OrgProfilePayload):
         org_id = ensure_default_org(db)
         profile = update_org_profile(db, org_id, payload.model_dump())
     return {"ok": True, "profile": profile}
+
+
+class NotificationSettingsPayload(BaseModel):
+    slackWebhookUrl: str = ""
+    slackAlertsEnabled: bool = False
+    digestEmails: list[str] | str = []
+    digestEnabled: bool = False
+    monthlyBudgetUsd: float = 0.0
+    budgetAlertThresholdPct: float = 80.0
+    githubPrCommentsEnabled: bool = False
+    alertOnCpstSpike: bool = True
+    alertOnBudgetBurn: bool = True
+    alertOnInbox: bool = True
+
+
+@app.get("/v1/settings/notifications", dependencies=[Depends(require_tenant_auth)])
+def get_notifications_settings():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        settings = get_notification_settings(db, org_id)
+    return {"settings": settings_payload_for_api(settings)}
+
+
+@app.put("/v1/settings/notifications", dependencies=[Depends(require_tenant_auth)])
+def put_notifications_settings(payload: NotificationSettingsPayload):
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        settings = update_notification_settings(db, org_id, payload.model_dump())
+    return {"ok": True, "settings": settings_payload_for_api(settings)}
+
+
+@app.post("/v1/notifications/test-slack", dependencies=[Depends(require_tenant_auth)])
+def test_slack_notification():
+    from app.notifications.slack import build_slack_blocks, post_slack_message
+
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        settings = get_notification_settings(db, org_id)
+        webhook = (settings.get("slackWebhookUrl") or "").strip()
+        if not webhook:
+            raise HTTPException(status_code=400, detail="Slack webhook URL not configured")
+        profile = org_profile_payload(db, org_id)
+        overview = build_overview(db, org_id)
+        inbox = build_inbox_summary(db, org_id)
+        company = profile.get("companyName") or "Your organization"
+        ok = post_slack_message(
+            webhook,
+            text=f"Outcome Ledger test alert for {company}",
+            blocks=build_slack_blocks(
+                company_name=company,
+                overview=overview,
+                alerts=[
+                    {
+                        "message": "Test alert — Slack integration is working.",
+                        "severity": "good",
+                    }
+                ],
+                inbox=inbox,
+            ),
+        )
+    if not ok:
+        raise HTTPException(status_code=502, detail="Slack webhook delivery failed")
+    return {"ok": True}
+
+
+@app.post("/v1/notifications/test-digest", dependencies=[Depends(require_tenant_auth)])
+def test_weekly_digest():
+    from app.notifications.email import send_weekly_digest
+
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        settings = get_notification_settings(db, org_id)
+        recipients = settings.get("digestEmails") or []
+        if not recipients:
+            raise HTTPException(status_code=400, detail="Add digestEmails in notification settings")
+        result = send_weekly_digest(db, org_id, recipients=recipients)
+    if not result.get("ok"):
+        raise HTTPException(status_code=502, detail=result.get("error", "digest failed"))
+    return result
 
 
 @app.get("/v1/settings/team-mappings", dependencies=[Depends(require_tenant_auth)])
@@ -871,6 +988,13 @@ def attribution_candidates(limit: int = 15):
     with get_db() as db:
         org_id = ensure_default_org(db)
         return {"candidates": list_link_candidates(db, org_id, limit=min(limit, 50))}
+
+
+@app.get("/v1/attribution/inbox", dependencies=[Depends(require_tenant_auth)])
+def attribution_inbox():
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_inbox_summary(db, org_id)
 
 
 @app.post("/v1/attribution/overrides", dependencies=[Depends(require_tenant_auth)])

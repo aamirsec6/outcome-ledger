@@ -30,6 +30,7 @@ class Organization(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(256), default="Default org")
     profile_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notifications_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     win_definition: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
@@ -153,6 +154,9 @@ class OutcomeEvent(Base):
     raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     reverted: Mapped[bool] = mapped_column(Boolean, default=False)
     workflow_type: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    cost_comment_posted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 

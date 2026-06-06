@@ -1,3 +1,4 @@
+import { NotificationSettingsPanel } from "@/components/notification-settings-panel";
 import { OrgProfilePanel } from "@/components/org-profile-panel";
 import { PageHeader } from "@/components/page-header";
 import { ThemeSettings } from "@/components/theme-settings";
@@ -6,6 +7,7 @@ import { WinDefinitionPanel } from "@/components/win-definition-panel";
 import { AgentApiKeyCard } from "@/components/agent-api-key-card";
 import { SyncAllButton } from "@/components/sync-all-button";
 import {
+  fetchNotificationSettings,
   fetchOrgProfile,
   fetchOutcomeWinSettings,
   fetchTeamMappings,
@@ -17,18 +19,31 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const live = hasLiveApi();
-  const [mappings, winSettings, orgProfile, apiKeyMeta] = live
+  const [mappings, winSettings, orgProfile, apiKeyMeta, notifSettings] = live
     ? await Promise.all([
         fetchTeamMappings(),
         fetchOutcomeWinSettings(),
         fetchOrgProfile(),
         fetchWorkspaceApiKeyMeta(),
+        fetchNotificationSettings(),
       ])
     : [
         [],
         { winType: "pr_merged_stable", stableDays: 7, summary: "", options: [] },
         { companyName: "Your organization" },
         { primaryKeyPrefix: null, primaryKeyName: null, error: null },
+        {
+          slackWebhookUrl: "",
+          slackAlertsEnabled: false,
+          digestEmails: [],
+          digestEnabled: false,
+          monthlyBudgetUsd: 0,
+          budgetAlertThresholdPct: 80,
+          githubPrCommentsEnabled: false,
+          alertOnCpstSpike: true,
+          alertOnBudgetBurn: true,
+          alertOnInbox: true,
+        },
       ];
 
   return (
@@ -42,6 +57,7 @@ export default async function SettingsPage() {
         initialName={apiKeyMeta.primaryKeyName}
         initialError={apiKeyMeta.error}
       />
+      <NotificationSettingsPanel initial={notifSettings} />
       <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
       <TeamMappingsPanel initialMappings={mappings} />

@@ -37,7 +37,7 @@ const NAV = [
 
 export function HeroDashboardBanner() {
   return (
-    <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
+    <div className="relative w-full">
       <div
         className="pointer-events-none absolute -inset-6 rounded-3xl opacity-50 blur-3xl"
         style={{
@@ -55,8 +55,8 @@ export function HeroDashboardBanner() {
           </span>
         </div>
 
-        <div className="flex min-h-[380px] max-h-[min(520px,70vh)] text-left">
-          <aside className="hidden w-[148px] shrink-0 flex-col border-r border-[var(--border)] bg-[#0a0a0a] px-2 py-3 sm:flex">
+        <div className="flex min-h-[400px] max-h-[min(560px,72vh)] text-left">
+          <aside className="hidden w-[160px] shrink-0 flex-col border-r border-[var(--border)] bg-[#0a0a0a] px-2 py-3 sm:flex">
             <div className="mb-4 flex items-center gap-1.5 px-1">
               <BarChart3 className="h-4 w-4 text-[var(--accent)]" />
               <div>
@@ -87,7 +87,7 @@ export function HeroDashboardBanner() {
             <header className="mb-3">
               <h3 className="text-sm font-medium text-white">Overview</h3>
               <p className="mt-0.5 text-[10px] text-[var(--text-dim)]">
-                Last 90 days (live) · CPST v1.0 · stable window 14d
+                Last 90 days (live). CPST v1.0. Stable window 14d.
                 <span className="ml-1 rounded bg-emerald-500/15 px-1 py-px text-[9px] text-emerald-400">
                   live
                 </span>
@@ -98,7 +98,7 @@ export function HeroDashboardBanner() {
               <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
               <div>
                 <p className="font-medium text-white">
-                  Board-ready attribution: 100% · target ≥80%
+                  Board-ready attribution: 100%. Target at least 80%.
                 </p>
                 <p className="text-[var(--text-muted)]">
                   Spend is sufficiently tagged to teams for board-ready CPST.
@@ -149,21 +149,21 @@ export function HeroDashboardBanner() {
             <section className="rounded-lg border border-[var(--border)] bg-[#111113] p-2.5">
               <p className="text-[11px] font-medium text-white">CPST trend (weekly)</p>
               <p className="mb-2 text-[9px] text-[var(--text-dim)]">
-                Fully loaded spend ÷ accepted outcomes — green when CPST falls
+                Fully loaded spend divided by accepted outcomes. Green when CPST falls.
               </p>
               <div className="mb-2 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] text-emerald-300">
-                CPST improving · Down 12% vs prior week
+                CPST improving. Down 12% vs prior week.
               </div>
               <HeroDashboardChart />
               <p className="mt-1 text-[8px] text-[var(--text-dim)]">
-                Green dot = CPST down vs prior week · Lower CPST is better
+                Green dot means CPST down vs prior week. Lower CPST is better.
               </p>
             </section>
           </div>
         </div>
       </div>
-      <p className="mt-2 text-center text-[11px] text-[var(--text-dim)] lg:text-left">
-        Live dashboard preview · interactive CPST chart
+      <p className="mt-3 text-[11px] text-[var(--text-dim)]">
+        Live dashboard preview with interactive cost per win chart
       </p>
     </div>
   );

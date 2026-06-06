@@ -19,6 +19,7 @@ from app.network_benchmarks import publish_org_benchmark
 from app.org_profile import org_profile_payload
 from app.outcome_contracts import ensure_default_contract
 from app.revert_check import check_reverts
+from app.notifications.delivery import deliver_post_sync_notifications
 from app.sync_audit import finish_sync_run, start_sync_run
 
 
@@ -73,6 +74,14 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
         )
         if results["openai"].get("ok") is False and results["openai"].get("error"):
             pass
+        if results.get("ok"):
+            new_ids = (results.get("github") or {}).get("newOutcomeIds") or []
+            results["notifications"] = deliver_post_sync_notifications(
+                db,
+                org_id,
+                bench=bench,
+                new_outcome_ids=new_ids,
+            )
     except Exception as exc:
         results["ok"] = False
         results["error"] = str(exc)

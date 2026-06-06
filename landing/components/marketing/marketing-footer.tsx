@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardLink } from "@/components/dashboard-link";
+import { PageContainer } from "@/components/marketing/page-container";
 
 const COLS = [
   {
@@ -27,8 +28,8 @@ const COLS = [
 
 export function MarketingFooter() {
   return (
-    <footer className="border-t border-[var(--border)] px-4 py-16">
-      <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-4">
+    <footer className="border-t border-[var(--border)] py-16">
+      <PageContainer className="grid gap-10 md:grid-cols-4">
         <div className="md:col-span-1">
           <p className="text-sm font-medium text-white">Outcome Ledger</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--text-dim)]">
@@ -58,10 +59,10 @@ export function MarketingFooter() {
             </ul>
           </div>
         ))}
-      </div>
-      <p className="mx-auto mt-12 max-w-6xl text-xs text-[var(--text-dim)]">
-        © {new Date().getFullYear()} Outcome Ledger
-      </p>
+        <p className="mt-12 text-xs text-[var(--text-dim)] md:col-span-4">
+          © {new Date().getFullYear()} Outcome Ledger
+        </p>
+      </PageContainer>
     </footer>
   );
 }

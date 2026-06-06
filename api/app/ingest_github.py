@@ -53,6 +53,7 @@ def ingest_github_merged_prs(
     since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
     inserted = 0
     updated = 0
+    new_outcome_ids: list[str] = []
     per_repo: dict[str, dict[str, int]] = {}
     headers = github_headers(token)
 
@@ -105,21 +106,22 @@ def ingest_github_merged_prs(
                         repo_updated += 1
                         continue
 
-                    db.add(
-                        OutcomeEvent(
-                            org_id=org_id,
-                            external_id=ext,
-                            outcome_type="pr_merged_stable",
-                            accepted=True,
-                            occurred_at=merged_dt,
-                            team_id=team_id,
-                            repo=repo,
-                            pr_number=pr_num,
-                            title=(pr.get("title") or "")[:512],
-                            raw_json=json.dumps(meta),
-                            reverted=False,
-                        )
+                    row = OutcomeEvent(
+                        org_id=org_id,
+                        external_id=ext,
+                        outcome_type="pr_merged_stable",
+                        accepted=True,
+                        occurred_at=merged_dt,
+                        team_id=team_id,
+                        repo=repo,
+                        pr_number=pr_num,
+                        title=(pr.get("title") or "")[:512],
+                        raw_json=json.dumps(meta),
+                        reverted=False,
                     )
+                    db.add(row)
+                    db.flush()
+                    new_outcome_ids.append(row.id)
                     inserted += 1
                     repo_inserted += 1
 
@@ -137,6 +139,7 @@ def ingest_github_merged_prs(
         "ok": True,
         "inserted": inserted,
         "updated": updated,
+        "newOutcomeIds": new_outcome_ids,
         "source": "github",
         "repos": repos,
         "perRepo": per_repo,

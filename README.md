@@ -71,6 +71,7 @@ See [docs/mcp-setup.md](docs/mcp-setup.md), [docs/agent-setup-one-pager.md](docs
 - [PRD](docs/prd.md)
 - [Moat strategy](docs/moat.md)
 - [Enterprise roadmap](docs/enterprise-roadmap.md)
+- [Alerts & digest setup](docs/notifications-setup.md) — Slack, weekly email, GitHub PR comments
 
 ## License
 

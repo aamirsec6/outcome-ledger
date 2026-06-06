@@ -89,26 +89,33 @@ export function AttributionOverridePanel() {
     );
   }
 
-  if (candidates.length === 0) {
-    return null;
-  }
-
   return (
-    <section className="theme-panel space-y-3 rounded-xl p-5">
+    <section id="attribution-inbox" className="theme-panel space-y-3 rounded-xl p-5 scroll-mt-6">
       <div>
         <h2 className="text-sm font-medium" style={{ color: "var(--text)" }}>
-          Review low-confidence links
+          Attribution inbox
+          {candidates.length > 0 ? (
+            <span className="ml-2 rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-300">
+              {candidates.length} to review
+            </span>
+          ) : (
+            <span className="ml-2 text-xs font-normal theme-text-dim">— clear</span>
+          )}
         </h2>
         <p className="text-xs theme-text-muted">
           Confirming links trains the Phase 2 learned linker on your next sync.
         </p>
       </div>
 
+      {candidates.length === 0 ? (
+        <p className="text-xs theme-text-dim">No low-confidence links right now. Check back after sync.</p>
+      ) : null}
+
       {message ? (
         <p className="text-xs theme-text-muted">{message}</p>
       ) : null}
 
-      <div className="space-y-2">
+      {candidates.length > 0 ? <div className="space-y-2">
         {candidates.map((c) => (
           <div
             key={c.linkId}
@@ -134,7 +141,7 @@ export function AttributionOverridePanel() {
             </button>
           </div>
         ))}
-      </div>
+      </div> : null}
     </section>
   );
 }

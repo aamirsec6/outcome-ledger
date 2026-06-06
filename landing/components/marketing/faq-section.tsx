@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { FAQ_ITEMS } from "@/lib/marketing-content";
+import { PageContainer } from "@/components/marketing/page-container";
 import { cn } from "@/lib/cn";
 
 export function FaqSection() {
@@ -11,14 +12,21 @@ export function FaqSection() {
   return (
     <section
       id="faq"
-      className="scroll-mt-28 border-t border-[var(--border)] px-4 py-20 md:py-28"
+      className="scroll-mt-28 border-t border-[var(--border)] py-20 md:py-28"
     >
-      <div className="mx-auto max-w-3xl">
-        <h2 className="text-2xl font-medium tracking-tight text-white md:text-3xl">
-          Common questions
-        </h2>
+      <PageContainer>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+          <div>
+            <h2 className="text-3xl font-medium tracking-tight text-white md:text-4xl">
+              Common questions
+            </h2>
+            <p className="mt-4 max-w-md text-[var(--text-muted)]">
+              Plain answers. No jargon wall.
+            </p>
+          </div>
+          <div>
 
-        <div className="mt-10 space-y-2">
+        <div className="space-y-2">
           {FAQ_ITEMS.map((item, i) => (
             <div
               key={item.q}
@@ -51,7 +59,9 @@ export function FaqSection() {
             </div>
           ))}
         </div>
-      </div>
+          </div>
+        </div>
+      </PageContainer>
     </section>
   );
 }

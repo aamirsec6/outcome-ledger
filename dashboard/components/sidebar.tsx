@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ClerkUserMenu } from "@/components/clerk-user-menu";
+import { InboxNavBadge } from "@/components/inbox-nav-badge";
 import { NAV, PRODUCT_TAGLINE } from "@/lib/copy";
 
 const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim());
@@ -64,6 +65,7 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4" />
               {label}
+              {href === "/overview" ? <InboxNavBadge /> : null}
             </Link>
           );
         })}

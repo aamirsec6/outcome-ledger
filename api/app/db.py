@@ -38,6 +38,10 @@ _LEGACY_COLUMN_MIGRATIONS: list[tuple[str, str, str]] = [
     ("organizations", "win_definition", "TEXT"),
     ("organizations", "profile_json", "TEXT"),
     ("provider_connections", "config_json", "TEXT"),
+    ("outcome_events", "workflow_type", "VARCHAR(32)"),
+    ("cpst_snapshots", "linked_spend_pct", "FLOAT DEFAULT 0"),
+    ("cpst_snapshots", "avg_link_confidence", "FLOAT DEFAULT 0"),
+    ("cpst_snapshots", "workflow_json", "TEXT"),
 ]
 
 

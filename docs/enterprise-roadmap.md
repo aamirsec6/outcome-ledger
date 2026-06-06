@@ -44,7 +44,8 @@
 | C1 | PDF export with methodology appendix | ✅ `GET /v1/reports/export.pdf` |
 | C2 | LLM exec narrative (metrics JSON in only) | ✅ `POST /v1/reports/executive` (template fallback; OpenAI optional) |
 | C3 | Human approve before export | ✅ `POST /v1/reports/executive/{id}/approve` |
-| C4 | Workflow classifier (feature / bugfix / chore) | ⬜ |
+| C4 | Workflow classifier (feature / bugfix / chore) | ✅ rules v1 + CPST by workflow |
+| C7 | Persisted attribution graph + benchmark deltas | ✅ `attribution_links`, `/v1/metrics/benchmarks` |
 | C5 | Connect wizard (MVP) | ✅ Integrations page |
 | C6 | Attribution breakdown UX | ✅ `GET /v1/metrics/attribution` + dashboard banners |
 

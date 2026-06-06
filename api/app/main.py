@@ -55,6 +55,8 @@ from app.executive_reports import (
     create_executive_report,
     latest_executive_report,
 )
+from app.attribution_engine import add_manual_override, rebuild_attribution_graph
+from app.benchmarks import build_benchmark_report
 from app.metrics import build_attribution_breakdown, build_overview, ensure_default_org
 from app.org_profile import org_profile_payload, update_org_profile
 from app.outcome_contracts import (
@@ -835,6 +837,46 @@ def metrics_attribution():
     except Exception as exc:
         logger.exception("metrics_attribution failed")
         raise HTTPException(status_code=500, detail="Attribution metrics failed") from exc
+
+
+@app.get("/v1/metrics/benchmarks", dependencies=[Depends(require_tenant_auth)])
+def metrics_benchmarks():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return build_benchmark_report(db, org_id, lookback_days=lookback)
+
+
+@app.post("/v1/attribution/rebuild", dependencies=[Depends(require_tenant_auth)])
+def attribution_rebuild():
+    lookback = int(os.getenv("SYNC_LOOKBACK_DAYS", "90"))
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        return rebuild_attribution_graph(db, org_id, lookback_days=lookback)
+
+
+class AttributionOverridePayload(BaseModel):
+    usageEventId: str
+    outcomeEventId: str
+    reason: str
+    allocatedUsd: float | None = None
+
+
+@app.post("/v1/attribution/overrides", dependencies=[Depends(require_tenant_auth)])
+def attribution_override(payload: AttributionOverridePayload):
+    with get_db() as db:
+        org_id = ensure_default_org(db)
+        result = add_manual_override(
+            db,
+            org_id,
+            usage_event_id=payload.usageEventId,
+            outcome_event_id=payload.outcomeEventId,
+            reason=payload.reason,
+            allocated_usd=payload.allocatedUsd,
+        )
+    if not result.get("ok"):
+        raise HTTPException(status_code=404, detail=result.get("error", "override failed"))
+    return result
 
 
 class ExecutiveApprovePayload(BaseModel):

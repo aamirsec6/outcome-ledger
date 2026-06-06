@@ -16,6 +16,8 @@ from app.outcome_contracts import (
     get_active_contract,
 )
 from app.revert_check import stable_days
+from app.attribution_engine import summary_from_persisted_links
+from app.benchmarks import workflow_cpst_breakdown
 
 
 def _month_start(dt: datetime) -> datetime:
@@ -192,6 +194,12 @@ def upsert_month_snapshot(db: Session, org_id: str, month: datetime) -> CpstSnap
     row.cpst_usd = metrics["cpstUsd"]
     row.failure_cost_share = metrics["failureCostShare"]
     row.attributed_pct = metrics["attributedPct"]
+    lookback = max(1, (period_end - period_start).days + 1)
+    graph = summary_from_persisted_links(db, org_id, lookback_days=lookback)
+    row.linked_spend_pct = float(graph.get("outcomeLinkedSpendPct") or 0)
+    row.avg_link_confidence = float(graph.get("avgLinkConfidence") or 0)
+    wf = workflow_cpst_breakdown(db, org_id, lookback_days=lookback)
+    row.workflow_json = json.dumps(wf) if wf else None
     row.teams_json = json.dumps(metrics["teams"])
     row.recorded_at = datetime.now(timezone.utc)
     db.flush()
@@ -251,6 +259,8 @@ def list_cpst_history(db: Session, org_id: str, *, limit: int = 24) -> list[dict
                 "cpstUsd": r.cpst_usd,
                 "failureCostShare": r.failure_cost_share,
                 "attributedPct": r.attributed_pct,
+                "linkedSpendPct": r.linked_spend_pct,
+                "avgLinkConfidence": r.avg_link_confidence,
                 "recordedAt": r.recorded_at.isoformat() if r.recorded_at else None,
                 "cfoApprovedContract": bool(r.contract_version),
                 "teams": teams,

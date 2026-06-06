@@ -9,6 +9,7 @@ from app.ingest_github import ingest_github_merged_prs
 from app.ingest_github_commits import ingest_github_default_branch_commits
 from app.outcome_contracts import WIN_TYPE_COMMIT, primary_win_type
 from app.ingest_openai import ingest_openai_costs
+from app.attribution_engine import rebuild_attribution_graph
 from app.cpst_history import record_cpst_snapshots
 from app.outcome_contracts import ensure_default_contract
 from app.revert_check import check_reverts
@@ -41,6 +42,9 @@ def run_full_sync(db: Session, org_id: str, *, trigger: str = "manual") -> dict:
             results["reverts"] = check_reverts(db, org_id)
         results["winType"] = win_type
         ensure_default_contract(db, org_id)
+        results["attributionGraph"] = rebuild_attribution_graph(
+            db, org_id, lookback_days=lookback
+        )
         results["cpstSnapshots"] = record_cpst_snapshots(db, org_id)
         if results["openai"].get("ok") is False and results["openai"].get("error"):
             pass

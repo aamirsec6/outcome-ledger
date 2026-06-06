@@ -265,6 +265,40 @@ export type AttributionBreakdown = {
   };
 };
 
+export type BenchmarkReport = {
+  periodLabel: string;
+  verdict: string;
+  current: {
+    cpstUsd: number;
+    linkedSpendPct: number;
+    avgLinkConfidence: number;
+    linkCount: number;
+    engine: string;
+  };
+  improvements: Record<string, number | string | null | undefined>;
+  workflows: {
+    workflowType: string;
+    linkedSpendUsd: number;
+    outcomeCount: number;
+    cpstUsd: number;
+  }[];
+  history: { period: string; cpstUsd: number; linkedSpendPct: number }[];
+};
+
+export async function fetchBenchmarks(): Promise<BenchmarkReport | null> {
+  if (!API_URL) return null;
+  try {
+    const res = await fetch(`${API_URL}/v1/metrics/benchmarks`, {
+      headers: await outcomeLedgerHeaders(),
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchAttribution(): Promise<AttributionBreakdown | null> {
   if (!API_URL) return null;
   try {

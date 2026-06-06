@@ -149,6 +149,32 @@ class OutcomeEvent(Base):
     title: Mapped[str | None] = mapped_column(String(512), nullable=True)
     raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     reverted: Mapped[bool] = mapped_column(Boolean, default=False)
+    workflow_type: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class AttributionLink(Base):
+    """Persisted usage <-> outcome graph with proportional cost allocation."""
+
+    __tablename__ = "attribution_links"
+    __table_args__ = (
+        UniqueConstraint(
+            "org_id",
+            "usage_event_id",
+            "outcome_event_id",
+            name="uq_attr_link",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(index=True)
+    usage_event_id: Mapped[str] = mapped_column(String(36), index=True)
+    outcome_event_id: Mapped[str] = mapped_column(String(36), index=True)
+    allocated_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    method: Mapped[str] = mapped_column(String(32), default="time_window")
+    is_manual_override: Mapped[bool] = mapped_column(Boolean, default=False)
+    override_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 
 
@@ -290,5 +316,8 @@ class CpstSnapshot(Base):
     cpst_usd: Mapped[float] = mapped_column(Float, default=0.0)
     failure_cost_share: Mapped[float] = mapped_column(Float, default=0.0)
     attributed_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    linked_spend_pct: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_link_confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    workflow_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     teams_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

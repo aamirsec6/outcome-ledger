@@ -1,11 +1,12 @@
 import { AttributionBanner } from "@/components/attribution-banner";
+import { BenchmarkPanel } from "@/components/benchmark-panel";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
 import { OutcomeGraphPanel } from "@/components/outcome-graph-panel";
 import { PageHeader } from "@/components/page-header";
 import { SetupRequired } from "@/components/setup-required";
 import { WinsPanel } from "@/components/wins-panel";
-import { fetchAttribution, fetchOverview, fetchWins } from "@/lib/api";
+import { fetchAttribution, fetchBenchmarks, fetchOverview, fetchWins } from "@/lib/api";
 import {
   attributionInsight,
   cpstTrendInsight,
@@ -16,10 +17,11 @@ import { pct, usd, usdCpst } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const [data, winsData, attribution] = await Promise.all([
+  const [data, winsData, attribution, benchmarks] = await Promise.all([
     fetchOverview(),
     fetchWins(),
     fetchAttribution(),
+    fetchBenchmarks(),
   ]);
 
   const needsSetup =
@@ -49,6 +51,8 @@ export default async function OverviewPage() {
       </PageHeader>
 
       <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
+
+      <BenchmarkPanel report={benchmarks} />
 
       {attribution?.outcomeGraph ? (
         <OutcomeGraphPanel graph={attribution.outcomeGraph} />

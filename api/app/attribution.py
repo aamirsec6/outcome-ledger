@@ -56,6 +56,19 @@ def build_outcome_linked_summary(
     db: Session, org_id: str, *, lookback_days: int = 90
 ) -> dict:
     try:
+        from app.attribution_engine import summary_from_persisted_links
+        from app.models import AttributionLink
+
+        has_links = (
+            db.query(AttributionLink)
+            .filter(AttributionLink.org_id == org_id)
+            .limit(1)
+            .first()
+        )
+        if has_links:
+            return summary_from_persisted_links(
+                db, org_id, lookback_days=lookback_days
+            )
         return _build_outcome_linked_summary(db, org_id, lookback_days=lookback_days)
     except Exception:
         logger.exception("outcome_linked_summary failed org_id=%s", org_id)

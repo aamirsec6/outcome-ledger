@@ -13,11 +13,11 @@ export function SetupRequired({ reason }: Props) {
           <Sparkles className="h-6 w-6 theme-accent" style={{ color: "var(--accent)" }} />
         </div>
         <h1 className="theme-heading text-2xl font-semibold tracking-tight md:text-3xl">
-          Set up your ledger first
+          Connect your tools first
         </h1>
         <p className="mt-3 text-base leading-relaxed theme-text-muted">
-          Your workspace is ready, but we need a few connections before CPST and
-          outcomes mean anything. This takes about five minutes.
+          Your workspace is ready. Link GitHub and AI spend, then sync — takes
+          about five minutes.
         </p>
         {reason && reason !== "api_not_configured" ? (
           <p className="mt-2 text-xs theme-text-dim">
@@ -41,15 +41,15 @@ export function SetupRequired({ reason }: Props) {
         </ol>
 
         <Link
-          href="/onboarding"
-          className="theme-accent-bg mt-8 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-medium text-white"
+          href="/integrations"
+          className="theme-btn-primary mt-8 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-medium"
         >
-          Continue setup
+          Go to Connect
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
       <p className="mt-4 text-center text-xs theme-text-dim">
-        We never show demo spend on a real account — finish setup to see your numbers.
+        Finish setup to see your real spend and wins.
       </p>
     </div>
   );

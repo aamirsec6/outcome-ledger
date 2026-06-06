@@ -42,17 +42,17 @@ export function AttributionBanner({
         </p>
         <p className="mt-1 theme-text-muted">
           {insight.urgency === "good"
-            ? "Spend is sufficiently tagged to teams for board-ready CPST."
+            ? "Most of your AI spend is tied to a team — reports will look solid."
             : insight.urgency === "bad"
-              ? "Over half of spend is unattributed — board exports will look weak until mappings are fixed."
-              : "Map repos to teams and connect vendors so unattributed spend drops below 20%."}
+              ? "Most spend isn't tied to a team yet. Tag repos in Settings to fix this."
+              : "Tag repos to teams in Settings so more spend shows up on the right team."}
         </p>
         {insight.urgency !== "good" ? (
           <Link
             href="/settings"
             className="mt-2 inline-block text-xs font-medium theme-accent"
           >
-            Team mappings →
+            Tag repos to teams →
           </Link>
         ) : null}
       </div>

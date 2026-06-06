@@ -103,8 +103,8 @@ export function GitHubConnectPanel({
       const n = syncData.github?.inserted ?? syncData.inserted ?? 0;
       setMessage(
         parts
-          ? `Synced ${n} outcomes (${parts}). Re-run if you just added a repo.`
-          : `Synced ${n} outcomes from ${selected.length} repo(s).`,
+          ? `Synced ${n} wins (${parts}). Re-run if you just added a repo.`
+          : `Synced ${n} wins from ${selected.length} repo(s).`,
       );
       router.refresh();
     } finally {
@@ -129,9 +129,9 @@ export function GitHubConnectPanel({
         <div className="flex items-center gap-3">
           <Github className="theme-icon h-8 w-8 shrink-0" />
           <div>
-            <h2 className="theme-heading text-base font-medium">Connect GitHub</h2>
+            <h2 className="theme-heading text-base font-medium">GitHub</h2>
             <p className="text-sm theme-text-muted">
-              Sign in with GitHub — we fetch merged PRs as outcomes. No PAT
+              Sign in with GitHub — we track shipped work from your repos. No token
               copy-paste.
             </p>
           </div>
@@ -155,7 +155,7 @@ export function GitHubConnectPanel({
           Connected as <span className="font-medium">{status.login}</span>
         </p>
         <p className="mt-1 text-xs theme-text-dim">
-          Select repos to track merged PR outcomes. New repo missing? Re-connect
+          Choose repos to track shipped work. Missing a repo? Re-connect
           GitHub below or add by name.
         </p>
         <a href={connectUrl} className="theme-accent mt-2 inline-block text-xs hover:underline">

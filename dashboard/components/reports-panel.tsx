@@ -79,7 +79,7 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
               className="theme-btn-secondary"
             >
               <RefreshCw className={cn("h-4 w-4", busy && "animate-spin")} />
-              Generate narrative
+              Write summary
             </button>
             <a href="/api/reports/export" className="theme-btn-secondary">
               <FileDown className="h-4 w-4" />
@@ -100,12 +100,12 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
               title={approved ? "Download board pack PDF" : "Approve narrative first"}
             >
               <FileDown className="h-4 w-4" />
-              PDF board pack
+              Download PDF
             </a>
           </>
         ) : (
           <p className="text-xs bg-warm-dim rounded px-2 py-1">
-            Connect OUTCOME_LEDGER_API_URL for live reports
+            Connect your data sources to generate live reports
           </p>
         )}
         {report ? (
@@ -126,7 +126,7 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
       {live && report && !approved ? (
         <div className="theme-panel flex flex-wrap items-end gap-2 p-4">
           <label className="theme-label flex flex-col gap-1 text-xs">
-            Approver name (required for PDF)
+            Your name (required before PDF download)
             <input
               type="text"
               value={signerName}
@@ -142,7 +142,7 @@ export function ReportsPanel({ live, initialReport, fallbackMemo }: Props) {
             className="theme-btn-primary"
           >
             <ShieldCheck className="h-4 w-4" />
-            Approve for export
+            Approve summary
           </button>
         </div>
       ) : null}

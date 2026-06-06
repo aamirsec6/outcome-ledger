@@ -13,16 +13,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { ClerkUserMenu } from "@/components/clerk-user-menu";
+import { NAV, PRODUCT_TAGLINE } from "@/lib/copy";
 
 const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim());
 
 const nav = [
-  { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/teams", label: "Teams", icon: Users },
-  { href: "/integrations", label: "Integrations", icon: Cable },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/contracts", label: "Outcome contract", icon: ScrollText },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/overview", label: NAV.overview, icon: LayoutDashboard },
+  { href: "/teams", label: NAV.teams, icon: Users },
+  { href: "/integrations", label: NAV.integrations, icon: Cable },
+  { href: "/reports", label: NAV.reports, icon: FileText },
+  { href: "/contracts", label: NAV.winDefinition, icon: ScrollText },
+  { href: "/settings", label: NAV.settings, icon: Settings },
 ];
 
 export function Sidebar() {
@@ -44,7 +45,7 @@ export function Sidebar() {
               Outcome Ledger
             </p>
             <p className="text-[10px] uppercase tracking-wider theme-text-dim">
-              Value accounting
+              {PRODUCT_TAGLINE}
             </p>
           </div>
         </div>

@@ -18,15 +18,15 @@ export default async function ContractsPage() {
   const drafts = versions.filter((v) => v.status === "draft");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <PageHeader title="Outcome contract">
-        Versioned definition of a win · CFO sign-off · immutable CPST history
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader title="Win rules">
+        What counts as a win, who signed off, and how cost per win is tracked over time
       </PageHeader>
 
       <OutcomeContractPanel contract={contract} draftVersions={drafts} />
 
       <section className="theme-panel p-5">
-        <h3 className="theme-heading text-base font-medium">CPST history (monthly)</h3>
+        <h3 className="theme-heading text-base font-medium">Cost per win history</h3>
         <p className="mt-1 text-sm theme-text-muted">
           Snapshots recorded after each sync. Comparable month-over-month once you have a few
           cycles — switching vendors means re-trust, not a weekend migration.

@@ -26,7 +26,7 @@ export function SyncAllButton() {
       }
       const gh = data.results?.github || data.github;
       const perRepo = gh?.perRepo as Record<string, { inserted?: number; mergedPrs?: number; commits?: number }> | undefined;
-      let detail = "Full sync completed (vendors + GitHub + revert scan).";
+      let detail = "Sync finished — spend and GitHub data updated.";
       if (perRepo && Object.keys(perRepo).length > 0) {
         const lines = Object.entries(perRepo).map(([repo, s]) => {
           const n = s.inserted ?? s.mergedPrs ?? s.commits ?? 0;
@@ -45,10 +45,9 @@ export function SyncAllButton() {
 
   return (
     <section className="theme-panel p-5">
-      <h3 className="theme-heading text-base font-medium">Enterprise sync</h3>
+      <h3 className="theme-heading text-base font-medium">Sync data</h3>
       <p className="mt-1 text-sm theme-text-muted">
-        Pull OpenAI, Anthropic, GitHub, and run revert detection. Logged in sync
-        history.
+        Refresh spend from connected tools and shipped work from GitHub.
       </p>
       <button
         type="button"
@@ -61,7 +60,7 @@ export function SyncAllButton() {
         ) : (
           <RefreshCw className="h-4 w-4" />
         )}
-        Run full sync
+        Sync now
       </button>
       {message ? <p className="theme-message mt-2">{message}</p> : null}
     </section>

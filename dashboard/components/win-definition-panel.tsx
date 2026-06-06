@@ -41,7 +41,7 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
       }
       setMessage(
         data.winType === winType
-          ? `Win definition updated (contract v${data.contract?.version ?? "?"}). Run Sync to refresh outcomes.`
+          ? `Win rules updated. Run Sync to refresh your numbers.`
           : "Saved.",
       );
       router.refresh();
@@ -71,10 +71,9 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
       <div className="flex items-start gap-3">
         <Target className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <h3 className="theme-heading text-base font-medium">Define a win</h3>
+          <h3 className="theme-heading text-base font-medium">What counts as a win</h3>
           <p className="mt-1 text-sm theme-text-muted">
-            Choose what counts as an accepted outcome for CPST. Published as a new outcome
-            contract version; CFO can re-sign on the Outcome contract page.
+            Pick how we measure shipped work. Changes apply after you sync.
           </p>
         </div>
       </div>
@@ -110,8 +109,8 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
 
       {initial.contract ? (
         <p className="mt-2 text-xs theme-text-dim">
-          Active contract v{initial.contract.version}
-          {initial.contract.cfoApproved ? " · CFO signed" : " · awaiting CFO sign-off"}
+          Rule set v{initial.contract.version}
+          {initial.contract.cfoApproved ? " · Signed off" : " · Awaiting sign-off"}
         </p>
       ) : null}
 
@@ -125,12 +124,12 @@ export function WinDefinitionPanel({ initial }: { initial: OutcomeWinSettings })
           {busy ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            "Save & publish contract"
+            "Save win rules"
           )}
         </button>
         {winType === "default_branch_commit" ? (
           <span className="text-xs bg-warm-dim rounded px-2 py-1">
-            Then run Sync — ingests master/main commits (skips PR merge commits).
+            Then run Sync to pick up new commits.
           </span>
         ) : null}
       </div>

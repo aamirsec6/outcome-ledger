@@ -68,7 +68,7 @@ export function AgentApiKeyCard({
       if (data.apiKey) {
         persistKey(data.apiKey);
         setMessage(
-          "Key saved in this browser. Copy it for outcome-ledger-mcp configure — we cannot show it again from the server unless you reveal again.",
+          "Key saved in this browser. Copy it for the setup guide on your computer.",
         );
       } else {
         setError(data.detail || data.message || "Could not reveal API key");
@@ -116,11 +116,10 @@ export function AgentApiKeyCard({
       <div className="flex items-start gap-3">
         <Key className="theme-icon mt-0.5 h-5 w-5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <h2 className="theme-heading text-lg font-semibold">Outcome Ledger API key</h2>
+          <h2 className="theme-heading text-lg font-semibold">Sync key (optional)</h2>
           <p className="mt-1 text-sm theme-text-muted">
-            Your <code className="text-xs">ol_…</code> key for the private sync agent. Browser
-            sync uses your sign-in — this key is only needed for{' '}
-            <code className="text-xs">outcome-ledger-mcp</code> on your computer.
+            Only needed if you sync from your computer. Browser sync uses your sign-in — no key
+            required for most teams.
           </p>
         </div>
       </div>
@@ -200,7 +199,7 @@ export function AgentApiKeyCard({
           href="/integrations#private-agent"
           className="theme-accent inline-flex items-center text-sm underline"
         >
-          Agent setup wizard →
+          Computer sync setup →
         </Link>
       </div>
     </section>

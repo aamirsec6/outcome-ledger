@@ -32,9 +32,9 @@ export default async function SettingsPage() {
       ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader title="Settings">
-        Appearance · define a win · team attribution · CPST v1.0 · scheduled sync
+        Profile, win rules, team tags, and optional sync key
       </PageHeader>
       <ThemeSettings />
       <AgentApiKeyCard
@@ -44,16 +44,8 @@ export default async function SettingsPage() {
       />
       <OrgProfilePanel initial={orgProfile} />
       <WinDefinitionPanel initial={winSettings} />
-      <SyncAllButton />
       <TeamMappingsPanel initialMappings={mappings} />
-      <section className="theme-panel p-4 text-sm theme-text-muted">
-        <p className="theme-heading font-medium">Cron (Railway)</p>
-        <p className="mt-2">
-          POST <code className="theme-code">/v1/cron/sync</code> daily with header{" "}
-          <code className="theme-code">X-Cron-Secret</code>. Set{" "}
-          <code className="theme-code">OUTCOME_STABLE_DAYS=7</code> for production (0 = pilot).
-        </p>
-      </section>
+      <SyncAllButton />
     </div>
   );
 }

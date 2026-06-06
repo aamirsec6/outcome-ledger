@@ -34,25 +34,25 @@ export function ConnectWizard({
     },
     {
       id: "vendors",
-      label: "Add AI spend (API or CSV)",
+      label: "Add AI spend",
       done: vendorConnected,
       href: "/integrations",
     },
     {
       id: "teams",
-      label: "Map repos → teams",
+      label: "Tag repos to teams",
       done: hasTeamMappings,
       href: "/settings",
     },
     {
       id: "sync",
-      label: "Run first sync",
+      label: "Run your first sync",
       done: hasLastSync,
       href: "/integrations",
     },
     {
       id: "coverage",
-      label: `Attribution ≥80% (now ${pct(attributedSpendPct)})`,
+      label: `Tag at least 80% of spend (now ${pct(attributedSpendPct)})`,
       done: attributedSpendPct >= 80,
       href: "/settings",
     },
@@ -63,14 +63,17 @@ export function ConnectWizard({
   if (complete) {
     return (
       <div className="rounded-lg bg-good-dim px-4 py-3 text-sm">
-        <p className="theme-heading font-medium">Setup complete</p>
+        <p className="theme-heading font-medium">You&apos;re all set</p>
         <p className="mt-1 theme-text-muted">
-          Integrations, team mappings, and sync are in place. Generate a report
-          on the{" "}
+          Connections and sync are working. View your numbers on{" "}
+          <Link href="/overview" className="theme-accent hover:underline">
+            Overview
+          </Link>{" "}
+          or export from{" "}
           <Link href="/reports" className="theme-accent hover:underline">
             Reports
-          </Link>{" "}
-          page.
+          </Link>
+          .
         </p>
       </div>
     );
@@ -79,7 +82,7 @@ export function ConnectWizard({
   return (
     <section className="theme-panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="theme-heading text-sm font-medium">Connect wizard</h2>
+        <h2 className="theme-heading text-sm font-medium">Setup checklist</h2>
         <span className="text-xs theme-text-dim">
           {doneCount}/{steps.length} complete
         </span>

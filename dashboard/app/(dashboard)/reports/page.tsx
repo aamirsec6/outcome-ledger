@@ -13,8 +13,8 @@ function buildFallbackMemo(
     "",
     `Period: ${data.periodLabel}`,
     `Total AI spend: ${usd(data.totalSpendUsd)}`,
-    `Organization CPST: ${usdCpst(data.orgCpstUsd)}`,
-    `Attributed spend: ${pct(data.attributedSpendPct)}`,
+    `Cost per win: ${usdCpst(data.orgCpstUsd)}`,
+    `Spend tagged to teams: ${pct(data.attributedSpendPct)}`,
     "",
     "Click Generate narrative when connected to the API.",
   ];
@@ -30,14 +30,9 @@ export default async function ReportsPage() {
   const fallbackMemo = buildFallbackMemo(data);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader title="Reports">
-        Board-ready export · metrics from store · human approval before PDF
-        {live ? (
-          <span className="ml-2 rounded bg-good-dim px-1.5 py-0.5 text-[10px]">live</span>
-        ) : (
-          <span className="ml-2 rounded bg-warm-dim px-1.5 py-0.5 text-[10px]">demo</span>
-        )}
+        Summary for leadership — review, approve, then download PDF or CSV
       </PageHeader>
 
       <ReportsPanel

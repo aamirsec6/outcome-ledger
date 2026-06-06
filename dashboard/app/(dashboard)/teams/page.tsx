@@ -11,9 +11,9 @@ export default async function TeamsPage() {
   const { teams, attributedSpendPct, orgCpstUsd } = await fetchOverview();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader title="Teams">
-        Compare cost per accepted outcome by engineering team
+        Spend, wins, and cost per win — by team
       </PageHeader>
 
       <AttributionBanner attributedSpendPct={attributedSpendPct} />
@@ -34,15 +34,15 @@ export default async function TeamsPage() {
               </h2>
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <MetricCard
-                  label="CPST"
+                  label="Cost per win"
                   value={usd(t.cpstUsd)}
                   urgency={cpstUrgency}
                 />
                 <MetricCard
-                  label="Failure cost"
-                  value={pct(t.failureCostShare)}
-                  hint="Failed runs in numerator"
-                  urgency={t.failureCostShare > 25 ? "bad" : "good"}
+                  label="Spend tagged"
+                  value={pct(t.attributedPct)}
+                  hint="Share tied to this team"
+                  urgency={attrUrgency}
                 />
               </div>
               <dl className="mt-4 grid grid-cols-2 gap-2 text-sm theme-text-muted">
@@ -53,26 +53,9 @@ export default async function TeamsPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt>Outcomes</dt>
+                  <dt>Wins</dt>
                   <dd className="font-medium" style={{ color: "var(--text)" }}>
                     {t.acceptedOutcomes}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Attributed</dt>
-                  <dd
-                    className={`font-medium ${
-                      attrUrgency === "good"
-                        ? "theme-good"
-                        : attrUrgency === "bad"
-                          ? "theme-bad"
-                          : ""
-                    }`}
-                    style={
-                      attrUrgency === "warn" ? { color: "var(--warm)" } : undefined
-                    }
-                  >
-                    {pct(t.attributedPct)}
                   </dd>
                 </div>
               </dl>

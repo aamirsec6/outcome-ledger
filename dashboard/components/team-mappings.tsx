@@ -52,9 +52,9 @@ export function TeamMappingsPanel({
       <div className="flex items-center gap-3">
         <Users className="theme-icon h-5 w-5 shrink-0" />
         <div>
-          <h3 className="theme-heading text-base font-medium">Team mapping</h3>
+          <h3 className="theme-heading text-base font-medium">Tag repos to teams</h3>
           <p className="mt-1 text-sm theme-text-muted">
-            Map GitHub repos to team IDs for attribution (longest pattern match wins).
+            Match a repo (or all repos in an org) to a team name so spend shows in the right place.
           </p>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function TeamMappingsPanel({
             />
             <input
               className="theme-input theme-input-sm w-32"
-              placeholder="team id"
+              placeholder="team name"
               value={row.teamId}
               onChange={(e) => updateRow(i, "teamId", e.target.value)}
             />
@@ -82,7 +82,7 @@ export function TeamMappingsPanel({
         </button>
         <button type="button" onClick={save} disabled={busy} className="theme-btn-primary">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Save mappings
+          Save
         </button>
       </div>
       {message ? <p className="theme-message-success mt-2">{message}</p> : null}

@@ -10,6 +10,7 @@ import {
   attributionInsight,
   cpstTrendInsight,
 } from "@/lib/chart-insights";
+import { METRICS } from "@/lib/copy";
 import { pct, usd, usdCpst } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -37,23 +38,12 @@ export default async function OverviewPage() {
   const attrInsight = attributionInsight(data.attributedSpendPct ?? 0);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader title="Overview">
-        {data.periodLabel} · CPST v{data.metricVersion || "1.0"}
-        {data.stableDays != null ? ` · stable window ${data.stableDays}d` : ""}
-        {data.activeContract?.cfoApproved ? (
-          <span className="ml-2 rounded bg-good-dim px-1.5 py-0.5 text-[10px]">contract v{data.activeContract.version} · CFO signed</span>
-        ) : data.activeContract ? (
-          <span className="ml-2 rounded bg-warm-dim px-1.5 py-0.5 text-[10px]">contract v{data.activeContract.version} · needs CFO sign-off</span>
-        ) : null}
-        {data.dataSource && data.dataSource !== "mock" ? (
-          <span className="ml-2 rounded bg-accent-dim px-1.5 py-0.5 text-[10px] theme-accent">{data.dataSource}</span>
-        ) : (
-          <span className="ml-2 rounded bg-warm-dim px-1.5 py-0.5 text-[10px]">demo data — set OUTCOME_LEDGER_API_URL</span>
-        )}
+        {data.periodLabel}
         {data.lastSync ? (
           <span className="mt-1 block text-xs theme-text-dim">
-            Last sync: {data.lastSync.startedAt} ({data.lastSync.trigger})
+            Last synced {data.lastSync.startedAt}
           </span>
         ) : null}
       </PageHeader>
@@ -67,7 +57,7 @@ export default async function OverviewPage() {
       {attribution && !attribution.meetsTarget && attribution.unassignedBySource.length > 0 ? (
         <div className="theme-panel rounded-xl p-4 text-sm theme-text-muted">
           <p className="font-medium" style={{ color: "var(--text)" }}>
-            Unassigned spend by source
+            Untagged spend by source
           </p>
           <ul className="mt-2 space-y-1">
             {attribution.unassignedBySource.map((row) => (
@@ -82,40 +72,40 @@ export default async function OverviewPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Total AI spend"
+          label={METRICS.totalSpend}
           value={usd(data.totalSpendUsd)}
-          hint="OpenAI, Anthropic, Cursor, Claude Code"
+          hint={METRICS.totalSpendHint}
         />
         <MetricCard
-          label="Stable outcomes"
+          label={METRICS.completedWork}
           value={String(data.stableOutcomes ?? data.totalOutcomes)}
           hint={
             (data.pendingOutcomes ?? 0) > 0
-              ? `${data.pendingOutcomes} pending stability window`
-              : "Merged PRs, not reverted"
+              ? `${data.pendingOutcomes} waiting to count`
+              : METRICS.completedWorkHint
           }
           urgency="neutral"
         />
         <MetricCard
-          label="Org CPST"
+          label={METRICS.costPerWin}
           value={usdCpst(data.orgCpstUsd)}
           hint={cpstInsight.detail}
           urgency={cpstInsight.urgency}
         />
         <MetricCard
-          label="Attributed spend"
+          label={METRICS.spendTagged}
           value={pct(data.attributedSpendPct)}
-          hint={`Failure cost share ${pct(data.failureCostShare)}`}
+          hint={METRICS.spendTaggedHint}
           urgency={attrInsight.urgency}
         />
       </div>
 
       <section className="theme-panel rounded-xl p-5">
         <h2 className="text-sm font-medium" style={{ color: "var(--text)" }}>
-          CPST trend (weekly)
+          Cost per win over time
         </h2>
         <p className="mb-4 text-xs theme-text-muted">
-          Fully loaded spend ÷ accepted outcomes — green when CPST falls week over week
+          Weekly view — lower is better
         </p>
         <CpstChart data={spendTrend} />
       </section>
@@ -146,8 +136,8 @@ export default async function OverviewPage() {
                 <th className="pb-2 pr-4">Team</th>
                 <th className="pb-2 pr-4">Spend</th>
                 <th className="pb-2 pr-4">Outcomes</th>
-                <th className="pb-2 pr-4">CPST</th>
-                <th className="pb-2">Attributed</th>
+                <th className="pb-2 pr-4">Cost / win</th>
+                <th className="pb-2">Tagged</th>
               </tr>
             </thead>
             <tbody>

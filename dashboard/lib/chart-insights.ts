@@ -20,8 +20,8 @@ export function cpstTrendInsight(
   if (points.length === 0) {
     return {
       urgency: "neutral",
-      label: "No CPST yet",
-      detail: "Add outcomes via GitHub sync to see cost per win.",
+      label: "No cost per win yet",
+      detail: "Connect GitHub and sync to see cost per win.",
       latestCpst: 0,
       priorCpst: null,
       changePct: null,
@@ -35,7 +35,7 @@ export function cpstTrendInsight(
     return {
       urgency: "neutral",
       label: "Baseline week",
-      detail: `Current CPST is $${latest < 1 ? latest.toFixed(2) : Math.round(latest)} per outcome.`,
+      detail: `Current cost per win is $${latest < 1 ? latest.toFixed(2) : Math.round(latest)}.`,
       latestCpst: latest,
       priorCpst: null,
       changePct: null,
@@ -46,8 +46,8 @@ export function cpstTrendInsight(
   if (changePct <= -8) {
     return {
       urgency: "good",
-      label: "CPST improving",
-      detail: `Down ${Math.abs(Math.round(changePct))}% vs prior week — cost per win is falling.`,
+      label: "Cost per win improving",
+      detail: `Down ${Math.abs(Math.round(changePct))}% vs last week.`,
       latestCpst: latest,
       priorCpst: prior,
       changePct,
@@ -56,8 +56,8 @@ export function cpstTrendInsight(
   if (changePct >= 8) {
     return {
       urgency: "bad",
-      label: "CPST rising",
-      detail: `Up ${Math.round(changePct)}% vs prior week — review retries and review load.`,
+      label: "Cost per win rising",
+      detail: `Up ${Math.round(changePct)}% vs last week — worth a closer look.`,
       latestCpst: latest,
       priorCpst: prior,
       changePct,
@@ -65,8 +65,8 @@ export function cpstTrendInsight(
   }
   return {
     urgency: "neutral",
-    label: "CPST stable",
-    detail: `Week-over-week change ${changePct >= 0 ? "+" : ""}${Math.round(changePct)}%.`,
+    label: "Cost per win stable",
+    detail: `Change vs last week: ${changePct >= 0 ? "+" : ""}${Math.round(changePct)}%.`,
     latestCpst: latest,
     priorCpst: prior,
     changePct,
@@ -78,12 +78,12 @@ export function attributionInsight(attributedPct: number): {
   label: string;
 } {
   if (attributedPct >= 80) {
-    return { urgency: "good", label: "Board-ready attribution" };
+    return { urgency: "good", label: "Spend tagging on track" };
   }
   if (attributedPct >= 50) {
-    return { urgency: "warn", label: "Attribution needs work" };
+    return { urgency: "warn", label: "Some spend isn't tagged" };
   }
-  return { urgency: "bad", label: "Low attribution — fix mappings" };
+  return { urgency: "bad", label: "Most spend isn't tagged" };
 }
 
 export function urgencyClasses(urgency: Urgency): string {

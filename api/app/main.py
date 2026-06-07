@@ -109,6 +109,8 @@ from app.waitlist_notify import (
     send_test_notification,
 )
 from app.wins import list_wins, win_definition_for_org
+from app.admin_panel import mount_admin
+from app.analytics import track_onboarding_event
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -146,6 +148,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount admin panel
+mount_admin(app)
 
 
 class TenantRegisterPayload(BaseModel):
@@ -186,9 +191,15 @@ def tenants_register(payload: TenantRegisterPayload):
     if not name:
         raise HTTPException(status_code=400, detail="Workspace name is required")
     with get_db() as db:
-        return register_tenant(
-            db, name=name, company_name=payload.companyName
-        )
+        result = register_tenant(db, name=name, company_name=payload.companyName)
+        # Track signup step
+        try:
+            org_id = result.get("orgId") or result.get("id")
+            if org_id:
+                track_onboarding_event(db, org_id, "signup", metadata={"source": "api"})
+        except Exception:
+            logger.exception("Failed to track signup event")
+        return result
 
 
 @app.post("/v1/tenants/clerk-sync", dependencies=[Depends(require_tenant_auth)])
@@ -305,6 +316,11 @@ def connections_openai(payload: OpenAIConnectionPayload):
                 "project_id": (payload.projectId or "").strip(),
             },
         )
+        # Track vendor connection step (non-blocking)
+        try:
+            track_onboarding_event(db, org_id, "connect_vendor", metadata={"provider": "openai"})
+        except Exception:
+            logger.exception("Failed to track connect_vendor event")
     return {"ok": True, "provider": "openai"}
 
 
@@ -561,6 +577,11 @@ def sync_all():
     with get_db() as db:
         org_id = ensure_default_org(db)
         results = run_full_sync(db, org_id, trigger="api")
+        # Track first sync step
+        try:
+            track_onboarding_event(db, org_id, "first_sync", metadata={"trigger": "api", "ok": results.get("ok", True)})
+        except Exception:
+            logger.exception("Failed to track first_sync event")
     return {"ok": True, "org_id": org_id, "results": results}
 
 
@@ -1200,6 +1221,11 @@ def connect_github_app_callback(
 
     with get_db() as db:
         result = complete_app_install(db, org_id=org_id, installation_id=installation_id)
+        # Track GitHub connection step
+        try:
+            track_onboarding_event(db, org_id, "connect_github", metadata={"login": result.get("login"), "repos_count": result.get("repos_count", 0)})
+        except Exception:
+            logger.exception("Failed to track connect_github event")
 
     login = result.get("login") or "github"
     return RedirectResponse(

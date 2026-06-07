@@ -403,3 +403,42 @@ class CpstSnapshot(Base):
     workflow_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     teams_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+# ── Admin analytics: onboarding funnel, retention, dropoff ──────────────────
+
+
+class OnboardingEvent(Base):
+    """Track each step a user completes during onboarding."""
+
+    __tablename__ = "onboarding_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(index=True)
+    step: Mapped[str] = mapped_column(String(64), index=True)
+    # e.g. signup, connect_github, connect_vendor, define_outcome, first_sync, first_dashboard, first_export
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class OrgHealthScore(Base):
+    """Pre-computed retention/engagement score per org for the admin panel."""
+
+    __tablename__ = "org_health_scores"
+    __table_args__ = (UniqueConstraint("org_id", name="uq_health_org"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    org_id: Mapped[str] = _org_id_column(unique=True, index=True)
+    onboarding_step: Mapped[str] = mapped_column(String(64), default="signup")
+    onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    first_cpst_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_dashboard_view_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_export_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sync_count_30d: Mapped[int] = mapped_column(default=0)
+    dashboard_views_30d: Mapped[int] = mapped_column(default=0)
+    # Retention bucket: active, at_risk, dormant, churned
+    retention_bucket: Mapped[str] = mapped_column(String(16), default="new", index=True)
+    health_score: Mapped[int] = mapped_column(default=0)
+    # 0-100: onboarding (30) + first_cpst (20) + sync_freq (20) + dashboard (15) + export (15)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

@@ -60,6 +60,7 @@ print('  ok')
 update_service "c11988b5-71ab-4cdd-b9ff-5d47e01a1da9" "api" "/api/railway.toml" "outcome-ledger (API)"
 update_service "86d88052-3c7c-496e-a7c6-4d15c1a70da7" "dashboard" "/dashboard/railway.toml" "outcome-ledger-dashboard"
 update_service "eda200a6-6a43-4d6d-a372-e601a4c154cb" "landing" "/landing/railway.toml" "outcome-ledger-landing"
+update_service "83127f48-856c-496a-b5f8-5dbf01dec2f4" "admin" "/admin/railway.toml" "outcome-ledger-admin"
 
 echo ""
 echo "Verifying service instances..."

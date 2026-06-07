@@ -15,6 +15,7 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | `outcome-ledger` (API) | `api` | https://outcome-ledger-production.up.railway.app |
 | `outcome-ledger-landing` | `landing` | https://outcome-ledger-landing-production.up.railway.app |
 | `outcome-ledger-dashboard` | `dashboard` | https://outcome-ledger-dashboard-production.up.railway.app |
+| `outcome-ledger-admin` | `admin` | https://outcome-ledger-admin-production.up.railway.app |
 | `Postgres-Xstw` | (Railway plugin) | internal — **dedicated** Outcome Ledger DB |
 | `Postgres` | (legacy) | deprecated — do not wire API to this |
 
@@ -36,6 +37,16 @@ See **[railway-github-connect.md](railway-github-connect.md)** for step-by-step 
 | `WAITLIST_NOTIFY_EMAILS` | your inbox for waitlist alerts |
 | `WAITLIST_FROM_EMAIL` | `onboarding@resend.dev` (test) or verified domain sender |
 | `LANDING_URL` | `https://outcome-ledger-landing-production.up.railway.app` |
+| `ADMIN_TOKEN` | long random secret for internal admin panel API |
+
+### Admin service (`outcome-ledger-admin`)
+
+Root Directory: **`admin`**.
+
+| Variable | Value |
+|----------|--------|
+| `NEXT_PUBLIC_ADMIN_API_URL` | `https://outcome-ledger-production.up.railway.app` |
+| `NEXT_PUBLIC_ADMIN_TOKEN` | same value as API `ADMIN_TOKEN` |
 
 ### Landing service (`outcome-ledger-landing`)
 
@@ -76,6 +87,9 @@ railway up dashboard --path-as-root --detach
 
 railway service link outcome-ledger-landing
 railway up landing --path-as-root --detach
+
+railway service link outcome-ledger-admin
+railway up admin --path-as-root --detach
 ```
 
 ## Health checks

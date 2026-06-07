@@ -1,0 +1,11 @@
+# Railway service: outcome-ledger-admin — Root Directory MUST be: admin
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["/admin/**", "/api/app/admin_panel.py", "/api/app/analytics.py"]
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"

@@ -88,3 +88,16 @@ export async function fetchOrgs(params?: {
 export async function fetchOrgDetail(orgId: string): Promise<OrgDetail> {
   return apiGet(`orgs/${encodeURIComponent(orgId)}`);
 }
+
+export async function runAnalyticsBackfill(): Promise<{
+  ok: boolean;
+  orgCount: number;
+  seededSteps: number;
+}> {
+  const res = await fetch("/api/admin/backfill", { method: "POST" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Backfill ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json();
+}

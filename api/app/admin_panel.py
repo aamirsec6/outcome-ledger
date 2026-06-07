@@ -7,6 +7,7 @@ import os
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 
 from app.analytics import (
+    backfill_all_analytics,
     compute_funnel,
     compute_retention_buckets,
     get_org_detail,
@@ -78,6 +79,15 @@ def admin_org_detail(org_id: str, _=admin_dep()):
         if "error" in detail:
             raise HTTPException(status_code=404, detail=detail["error"])
         return detail
+
+
+@admin_app.post("/v1/admin/backfill")
+def admin_backfill(_=admin_dep()):
+    """Infer onboarding events + health scores from existing product data."""
+    with get_db() as db:
+        result = backfill_all_analytics(db)
+        db.commit()
+        return {"ok": True, **result}
 
 
 @admin_app.post("/v1/admin/track/{org_id}/{step}")

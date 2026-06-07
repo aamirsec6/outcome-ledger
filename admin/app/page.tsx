@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { FunnelChart } from "./components/funnel-chart";
 import { RetentionBar } from "./components/retention-bar";
 import { OrgTable } from "./components/org-table";
-import { fetchFunnel, fetchRetention, fetchOrgs } from "@/lib/api";
+import { fetchFunnel, fetchRetention, fetchOrgs, runAnalyticsBackfill } from "@/lib/api";
 import type { FunnelStep, RetentionBuckets, OrgHealth } from "@/lib/api";
 
 export default function AdminPage() {
@@ -15,12 +15,13 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bucketFilter, setBucketFilter] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
 
   useEffect(() => {
     loadData();
   }, [bucketFilter]);
 
-  async function loadData() {
+  async function loadData(options?: { allowAutoBackfill?: boolean }) {
     setLoading(true);
     setError(null);
     try {
@@ -29,6 +30,22 @@ export default function AdminPage() {
         fetchRetention(),
         fetchOrgs({ bucket: bucketFilter || undefined, limit: 50 }),
       ]);
+
+      const needsBackfill =
+        options?.allowAutoBackfill !== false &&
+        orgsData.total > 0 &&
+        orgsData.orgs.length === 0;
+
+      if (needsBackfill) {
+        setBackfilling(true);
+        try {
+          await runAnalyticsBackfill();
+          return loadData({ allowAutoBackfill: false });
+        } finally {
+          setBackfilling(false);
+        }
+      }
+
       setFunnel(funnelData);
       setRetention(retentionData);
       setOrgs(orgsData.orgs);
@@ -43,7 +60,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-sm text-[var(--text-muted)]">Loading analytics…</div>
+        <div className="text-sm text-[var(--text-muted)]">
+          {backfilling ? "Backfilling analytics from existing data…" : "Loading analytics…"}
+        </div>
       </div>
     );
   }
@@ -55,7 +74,7 @@ export default function AdminPage() {
           <p className="text-sm text-red-400">Failed to load admin data</p>
           <p className="mt-2 text-xs text-[var(--text-muted)]">{error}</p>
           <button
-            onClick={loadData}
+            onClick={() => loadData()}
             className="mt-4 rounded-lg border border-[var(--border)] px-4 py-2 text-xs text-[var(--text)] hover:bg-[var(--bg-elevated)]"
           >
             Retry
@@ -84,7 +103,24 @@ export default function AdminPage() {
               {totalOrgs} orgs
             </span>
             <button
-              onClick={loadData}
+              onClick={async () => {
+                setBackfilling(true);
+                try {
+                  await runAnalyticsBackfill();
+                  await loadData({ allowAutoBackfill: false });
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "Backfill failed");
+                } finally {
+                  setBackfilling(false);
+                }
+              }}
+              disabled={backfilling}
+              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] disabled:opacity-50"
+            >
+              {backfilling ? "Backfilling…" : "Backfill data"}
+            </button>
+            <button
+              onClick={() => loadData()}
               className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-elevated)]"
             >
               Refresh

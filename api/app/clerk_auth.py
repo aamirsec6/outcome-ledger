@@ -151,6 +151,17 @@ def provision_clerk_tenant(
     create_org_api_key(db, org_id=org.id, name="clerk")
     ensure_default_contract(db, org.id)
     db.flush()
+    from app.analytics import track_onboarding_event
+
+    try:
+        track_onboarding_event(
+            db,
+            org.id,
+            "signup",
+            metadata={"source": "clerk"},
+        )
+    except Exception:
+        logger.exception("Failed to track Clerk signup for org_id=%s", org.id)
     logger.info(
         "Provisioned Clerk tenant org_id=%s clerk_user=%s clerk_org=%s",
         org.id,

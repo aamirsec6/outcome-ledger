@@ -1,19 +1,9 @@
-const API_URL = (process.env.NEXT_PUBLIC_ADMIN_API_URL || "").replace(/\/$/, "");
-const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || "";
-
-function apiHeaders(): Record<string, string> {
-  return {
-    "Content-Type": "application/json",
-    "X-Admin-Token": ADMIN_TOKEN,
-  };
-}
-
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: apiHeaders(),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  const res = await fetch(`/api/admin/${path}`, { cache: "no-store" });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${res.status}: ${text.slice(0, 200)}`);
+  }
   return res.json();
 }
 
@@ -70,15 +60,15 @@ export type OrgDetail = {
   }[];
 };
 
-// ── API calls ──────────────────────────────────────────────────────────────
+// ── API calls (via server proxy — token stays server-side) ─────────────────
 
 export async function fetchFunnel(): Promise<FunnelStep[]> {
-  const data = await apiGet<{ funnel: FunnelStep[] }>("/admin/v1/admin/funnel");
+  const data = await apiGet<{ funnel: FunnelStep[] }>("funnel");
   return data.funnel;
 }
 
 export async function fetchRetention(): Promise<RetentionBuckets> {
-  const data = await apiGet<{ buckets: RetentionBuckets }>("/admin/v1/admin/retention");
+  const data = await apiGet<{ buckets: RetentionBuckets }>("retention");
   return data.buckets;
 }
 
@@ -92,9 +82,9 @@ export async function fetchOrgs(params?: {
   if (params?.limit) q.set("limit", String(params.limit));
   if (params?.offset) q.set("offset", String(params.offset));
   const qs = q.toString() ? `?${q.toString()}` : "";
-  return apiGet(`/admin/v1/admin/orgs${qs}`);
+  return apiGet(`orgs${qs}`);
 }
 
 export async function fetchOrgDetail(orgId: string): Promise<OrgDetail> {
-  return apiGet(`/admin/v1/admin/orgs/${orgId}`);
+  return apiGet(`orgs/${encodeURIComponent(orgId)}`);
 }

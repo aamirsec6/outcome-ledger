@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 
 from app.analytics import (
     compute_funnel,
@@ -21,7 +21,7 @@ admin_app = FastAPI(title="Outcome Ledger Admin")
 
 
 def _require_admin_token(
-    x_admin_token: str | None = None,
+    x_admin_token: str | None = Header(default=None, alias="X-Admin-Token"),
 ) -> None:
     """Simple token auth for the admin panel."""
     expected = (os.getenv("ADMIN_TOKEN") or "").strip()

@@ -1,14 +1,10 @@
+/** One-line page context below the shell top bar title. */
 export function PageHeader({
-  title,
   children,
 }: {
-  title: string;
+  title?: string;
   children?: React.ReactNode;
 }) {
-  return (
-    <header>
-      <h1 className="text-2xl font-semibold theme-heading">{title}</h1>
-      {children ? <div className="mt-1 text-sm theme-text-muted">{children}</div> : null}
-    </header>
-  );
+  if (!children) return null;
+  return <p className="text-sm theme-text-muted">{children}</p>;
 }

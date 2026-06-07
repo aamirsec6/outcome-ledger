@@ -16,7 +16,7 @@ export function AgentSetupCard() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
-          <Link href="/settings#outcome-ledger-api-key" className="theme-accent underline">
+          <Link href="/settings?section=developer" className="theme-accent underline">
             Get your API key
           </Link>
           <span className="theme-text-dim">·</span>

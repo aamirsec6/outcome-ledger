@@ -11,10 +11,12 @@ export function SpendCsvUpload({
   source,
   label,
   hint,
+  embedded = false,
 }: {
   source: string;
   label: string;
   hint: string;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -63,13 +65,17 @@ export function SpendCsvUpload({
     }
   }
 
-  return (
-    <section className="theme-panel p-5">
-      <div className="flex items-center gap-2">
-        <Upload className="h-5 w-5" style={{ color: "var(--warm)" }} />
-        <h3 className="theme-heading text-base font-medium">{label}</h3>
-      </div>
-      <p className="mt-1 text-sm theme-text-muted">{hint}</p>
+  const body = (
+    <>
+      {!embedded ? (
+        <div className="flex items-center gap-2">
+          <Upload className="h-5 w-5" style={{ color: "var(--warm)" }} />
+          <h3 className="theme-heading text-base font-medium">{label}</h3>
+        </div>
+      ) : null}
+      <p className={embedded ? "text-sm theme-text-muted" : "mt-1 text-sm theme-text-muted"}>
+        {hint}
+      </p>
       <form onSubmit={onSubmit} className="mt-3 space-y-3">
         <input
           type="file"
@@ -87,6 +93,10 @@ export function SpendCsvUpload({
         </button>
         {message ? <p className="theme-message-success">{message}</p> : null}
       </form>
-    </section>
+    </>
   );
+
+  if (embedded) return <div className="space-y-2">{body}</div>;
+
+  return <section className="theme-panel p-5">{body}</section>;
 }

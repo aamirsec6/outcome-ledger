@@ -54,7 +54,13 @@ export function TeamMappingsPanel({
         <div>
           <h3 className="theme-heading text-base font-medium">Tag repos to teams</h3>
           <p className="mt-1 text-sm theme-text-muted">
-            Match a repo (or all repos in an org) to a team name so spend shows in the right place.
+            Each row links a GitHub repo to a team label. That team then gets credit for spend
+            and merged PR wins from those repos on the Teams page.
+          </p>
+          <p className="mt-2 text-xs theme-text-dim">
+            Example: <code className="theme-code">aamirsec6/outcome-ledger</code> →{" "}
+            <code className="theme-code">platform</code>. Use{" "}
+            <code className="theme-code">org/</code> to match every repo in an org.
           </p>
         </div>
       </div>

@@ -49,7 +49,7 @@ export function AttributionBanner({
         </p>
         {insight.urgency !== "good" ? (
           <Link
-            href="/settings"
+            href="/settings?section=teams"
             className="mt-2 inline-block text-xs font-medium theme-accent"
           >
             Tag repos to teams →

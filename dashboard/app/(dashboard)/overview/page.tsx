@@ -5,7 +5,7 @@ import { BenchmarkPanel } from "@/components/benchmark-panel";
 import { CpstChart } from "@/components/cpst-chart";
 import { MetricCard } from "@/components/metric-card";
 import { OutcomeGraphPanel } from "@/components/outcome-graph-panel";
-import { PageHeader } from "@/components/page-header";
+import { OverviewTabs } from "@/components/overview-tabs";
 import { SetupRequired } from "@/components/setup-required";
 import { WinsPanel } from "@/components/wins-panel";
 import {
@@ -48,46 +48,22 @@ export default async function OverviewPage() {
   const cpstInsight = cpstTrendInsight(spendTrend);
   const attrInsight = attributionInsight(data.attributedSpendPct ?? 0);
 
+  const periodLine = [
+    data.periodLabel,
+    data.lastSync?.startedAt ? `Synced ${data.lastSync.startedAt}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <PageHeader title="Overview">
-        {data.periodLabel}
-        {data.lastSync ? (
-          <span className="mt-1 block text-xs theme-text-dim">
-            Last synced {data.lastSync.startedAt}
-          </span>
-        ) : null}
-      </PageHeader>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <p className="text-xs theme-text-dim">{periodLine}</p>
 
-      <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
-
-      <BenchmarkPanel report={benchmarks} />
-
-      <AiAdoptionPanel report={aiAdoption} />
-
-      <AttributionOverridePanel />
-
-      {attribution?.outcomeGraph ? (
-        <OutcomeGraphPanel graph={attribution.outcomeGraph} />
+      {(data.attributedSpendPct ?? 0) < 80 ? (
+        <AttributionBanner attributedSpendPct={data.attributedSpendPct} />
       ) : null}
 
-      {attribution && !attribution.meetsTarget && attribution.unassignedBySource.length > 0 ? (
-        <div className="theme-panel rounded-xl p-4 text-sm theme-text-muted">
-          <p className="font-medium" style={{ color: "var(--text)" }}>
-            Untagged spend by source
-          </p>
-          <ul className="mt-2 space-y-1">
-            {attribution.unassignedBySource.map((row) => (
-              <li key={row.source} className="flex justify-between tabular-nums">
-                <span>{row.source}</span>
-                <span className="theme-bad">{usd(row.spendUsd)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label={METRICS.totalSpend}
           value={usd(data.totalSpendUsd)}
@@ -117,93 +93,113 @@ export default async function OverviewPage() {
         />
       </div>
 
-      <section className="theme-panel rounded-xl p-5">
-        <h2 className="text-sm font-medium" style={{ color: "var(--text)" }}>
-          Cost per win over time
-        </h2>
-        <p className="mb-4 text-xs theme-text-muted">
-          Weekly view — lower is better
-        </p>
-        <CpstChart data={spendTrend} />
-      </section>
-
-      <WinsPanel
-        winDefinition={
-          winsData.winDefinition ||
-          (data as { winDefinition?: string }).winDefinition ||
-          "Merged pull requests that count as accepted engineering wins."
+      <OverviewTabs
+        summary={
+          <>
+            <section className="theme-panel rounded-xl p-5">
+              <h2 className="text-sm font-medium theme-heading">
+                Cost per win over time
+              </h2>
+              <p className="mb-4 text-xs theme-text-muted">
+                Weekly — lower is better
+              </p>
+              <CpstChart data={spendTrend} />
+            </section>
+            <BenchmarkPanel report={benchmarks} />
+          </>
         }
-        wins={winsData.wins}
-        limit={5}
-        totalCount={(winsData as { total?: number }).total ?? winsData.wins.length}
-        compact
+        output={
+          <>
+            <WinsPanel
+              winDefinition={
+                winsData.winDefinition ||
+                (data as { winDefinition?: string }).winDefinition ||
+                "Merged pull requests that count as accepted engineering wins."
+              }
+              wins={winsData.wins}
+              limit={8}
+              totalCount={
+                (winsData as { total?: number }).total ?? winsData.wins.length
+              }
+              compact
+            />
+            {teams.length > 0 ? (
+              <section className="theme-panel rounded-xl p-5">
+                <h2 className="mb-4 text-sm font-medium theme-heading">Teams</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b text-xs uppercase theme-text-dim" style={{ borderColor: "var(--border)" }}>
+                        <th className="pb-2 pr-4">Team</th>
+                        <th className="pb-2 pr-4">Spend</th>
+                        <th className="pb-2 pr-4">Wins</th>
+                        <th className="pb-2 pr-4">Cost / win</th>
+                        <th className="pb-2">Tagged</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teams.map((t) => (
+                        <tr
+                          key={t.teamId}
+                          className="border-b theme-text-muted"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <td className="py-3 pr-4 font-medium theme-heading">
+                            {t.teamName}
+                          </td>
+                          <td className="py-3 pr-4 tabular-nums">{usd(t.spendUsd)}</td>
+                          <td className="py-3 pr-4 tabular-nums">
+                            {t.acceptedOutcomes}
+                          </td>
+                          <td
+                            className={`py-3 pr-4 tabular-nums ${
+                              t.cpstUsd > orgCpstUsd * 1.15
+                                ? "theme-bad"
+                                : t.cpstUsd < orgCpstUsd * 0.85
+                                  ? "theme-good"
+                                  : "theme-accent"
+                            }`}
+                          >
+                            {usd(t.cpstUsd)}
+                          </td>
+                          <td className="py-3 tabular-nums">{pct(t.attributedPct)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ) : null}
+          </>
+        }
+        ai={<AiAdoptionPanel report={aiAdoption} />}
+        attribution={
+          <>
+            {attribution?.outcomeGraph ? (
+              <OutcomeGraphPanel graph={attribution.outcomeGraph} />
+            ) : null}
+            <AttributionOverridePanel />
+            {attribution &&
+            !attribution.meetsTarget &&
+            attribution.unassignedBySource.length > 0 ? (
+              <section className="theme-panel rounded-xl p-4 text-sm theme-text-muted">
+                <p className="font-medium theme-heading">Untagged spend by source</p>
+                <ul className="mt-2 space-y-1">
+                  {attribution.unassignedBySource.map((row) => (
+                    <li key={row.source} className="flex justify-between tabular-nums">
+                      <span>{row.source}</span>
+                      <span className="theme-bad">{usd(row.spendUsd)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </>
+        }
       />
 
-      <section className="theme-panel rounded-xl p-5">
-        <h2 className="mb-4 text-sm font-medium" style={{ color: "var(--text)" }}>
-          Teams
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr
-                className="border-b text-xs uppercase theme-text-dim"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <th className="pb-2 pr-4">Team</th>
-                <th className="pb-2 pr-4">Spend</th>
-                <th className="pb-2 pr-4">Outcomes</th>
-                <th className="pb-2 pr-4">Cost / win</th>
-                <th className="pb-2">Tagged</th>
-              </tr>
-            </thead>
-            <tbody>
-              {teams.map((t) => (
-                <tr
-                  key={t.teamId}
-                  className="border-b theme-text-muted"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <td className="py-3 pr-4 font-medium" style={{ color: "var(--text)" }}>
-                    {t.teamName}
-                  </td>
-                  <td className="py-3 pr-4 tabular-nums">{usd(t.spendUsd)}</td>
-                  <td className="py-3 pr-4 tabular-nums">
-                    {t.acceptedOutcomes}
-                  </td>
-                  <td
-                    className={`py-3 pr-4 tabular-nums ${
-                      t.cpstUsd > orgCpstUsd * 1.15
-                        ? "theme-bad"
-                        : t.cpstUsd < orgCpstUsd * 0.85
-                          ? "theme-good"
-                          : "theme-accent"
-                    }`}
-                  >
-                    {usd(t.cpstUsd)}
-                  </td>
-                  <td
-                    className={`py-3 tabular-nums ${
-                      t.attributedPct >= 80
-                        ? "theme-good"
-                        : t.attributedPct < 50
-                          ? "theme-bad"
-                          : ""
-                    }`}
-                  >
-                    {pct(t.attributedPct)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       {data.dataSource === "mock" || data.dataSource === "mock-fallback" ? (
-        <p className="text-center text-xs theme-text-dim">
-          Demo data · Run API sync with OpenAI + GitHub keys for live metrics
-        </p>
+        <p className="text-center text-xs theme-text-dim">Demo data</p>
       ) : null}
     </div>
   );

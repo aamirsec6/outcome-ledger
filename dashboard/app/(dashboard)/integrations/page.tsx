@@ -1,28 +1,20 @@
-import { CheckCircle2, Circle, Upload } from "lucide-react";
-import { AgentSetupCard } from "@/components/agent-setup-card";
 import { ConnectWizard } from "@/components/connect-wizard";
 import { CursorConnectPanel } from "@/components/cursor-connect";
 import { GitHubConnectPanel } from "@/components/github-connect";
+import { IntegrationConnectHub } from "@/components/integration-connect-hub";
 import { PageHeader } from "@/components/page-header";
-import { SectionCard } from "@/components/section-card";
 import { SpendCsvUpload } from "@/components/spend-csv-upload";
 import { SyncAllButton } from "@/components/sync-all-button";
 import { fetchOverview, fetchTeamMappings } from "@/lib/api";
+import type { IntegrationId } from "@/lib/integrations-catalog";
 import {
   connectGithubUrl,
   fetchAvailableRepos,
   fetchGithubStatus,
   installGithubAppUrl,
 } from "@/lib/github-api";
-import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
-
-const statusLabel = {
-  connected: "Connected",
-  csv: "CSV uploaded",
-  pending: "Not connected",
-} as const;
 
 export default async function IntegrationsPage({
   searchParams,
@@ -40,12 +32,73 @@ export default async function IntegrationsPage({
   ]);
   const { integrations, attributedSpendPct, lastSync } = overview;
 
-  const others = integrations.filter((i) => i.id !== "github");
+  const cursorConfigured =
+    integrations.find((i) => i.id === "cursor")?.status === "connected";
+
+  const panels: Partial<Record<IntegrationId, React.ReactNode>> = {
+    github: (
+      <GitHubConnectPanel
+        connectUrl={connectGithubUrl()}
+        installAppUrl={installGithubAppUrl()}
+        status={githubStatus}
+        availableRepos={available.repos || []}
+      />
+    ),
+    cursor: (
+      <div className="space-y-4">
+        <CursorConnectPanel configured={cursorConfigured} />
+        <SpendCsvUpload
+          embedded
+          source="cursor"
+          label="Cursor"
+          hint="No Team API yet? Export from Billing & Invoices and upload a CSV."
+        />
+      </div>
+    ),
+    openai: (
+      <SpendCsvUpload
+        embedded
+        source="openai"
+        label="OpenAI"
+        hint="Upload a billing CSV with date and amount columns."
+      />
+    ),
+    anthropic: (
+      <SpendCsvUpload
+        embedded
+        source="anthropic"
+        label="Anthropic"
+        hint="Upload a usage or billing CSV with date and cost_usd."
+      />
+    ),
+    "claude-code": (
+      <SpendCsvUpload
+        embedded
+        source="claude-code"
+        label="Claude Code"
+        hint="Upload a usage or billing CSV with date and cost."
+      />
+    ),
+    copilot: (
+      <SpendCsvUpload
+        embedded
+        source="copilot"
+        label="Copilot"
+        hint="Export Copilot billing from GitHub org settings, then upload CSV."
+      />
+    ),
+    langfuse: (
+      <p className="rounded-lg theme-inset px-4 py-3 text-sm theme-text-muted">
+        Langfuse connection is coming soon. For now, export costs to CSV or use the
+        local MCP agent.
+      </p>
+    ),
+  };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader title="Connect">
-        Link GitHub and your AI tools, then sync to see spend and wins.
+        Pick a tool below to connect — GitHub for wins, AI vendors for spend.
         {params.github_app === "connected" && params.login ? (
           <span className="mt-2 block theme-accent">
             GitHub App installed for {params.login}
@@ -66,74 +119,14 @@ export default async function IntegrationsPage({
         hasLastSync={Boolean(lastSync)}
       />
 
-      <GitHubConnectPanel
-        connectUrl={connectGithubUrl()}
-        installAppUrl={installGithubAppUrl()}
-        status={githubStatus}
-        availableRepos={available.repos || []}
-      />
+      <IntegrationConnectHub integrations={integrations} panels={panels} />
 
-      <SectionCard
-        title="AI spend"
-        description="Connect billing APIs or upload a CSV if auto-sync isn't available."
-      >
-        <ul className="space-y-2">
-          {others.map((i) => (
-            <li
-              key={i.id}
-              className="theme-inset flex items-center justify-between rounded-lg px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                {i.status === "connected" ? (
-                  <CheckCircle2 className="theme-icon h-5 w-5" />
-                ) : i.status === "csv" ? (
-                  <Upload className="h-5 w-5" style={{ color: "var(--warm)" }} />
-                ) : (
-                  <Circle className="h-5 w-5 theme-text-dim" />
-                )}
-                <span className="theme-heading font-medium">{i.name}</span>
-              </div>
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  i.status === "connected" && "bg-good-dim",
-                  i.status === "csv" && "bg-warm-dim",
-                  i.status === "pending" && "theme-badge-neutral",
-                )}
-              >
-                {statusLabel[i.status]}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="space-y-4 border-t border-[var(--border)] pt-4">
-          <CursorConnectPanel
-            configured={
-              others.find((i) => i.id === "cursor")?.status === "connected"
-            }
-          />
-          <SpendCsvUpload
-            source="openai"
-            label="OpenAI"
-            hint="Upload a billing CSV with date and amount columns."
-          />
-          <SpendCsvUpload
-            source="cursor"
-            label="Cursor"
-            hint="Export from Billing & Invoices, then upload here."
-          />
-          <SpendCsvUpload
-            source="claude-code"
-            label="Claude Code"
-            hint="Upload a usage or billing CSV with date and cost."
-          />
-        </div>
-      </SectionCard>
-
-      <SyncAllButton />
-
-      <AgentSetupCard />
+      <div className="flex flex-col gap-3 border-t border-[var(--border)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm theme-text-muted">
+          After connecting, run sync to pull spend and GitHub wins into Overview.
+        </p>
+        <SyncAllButton />
+      </div>
     </div>
   );
 }

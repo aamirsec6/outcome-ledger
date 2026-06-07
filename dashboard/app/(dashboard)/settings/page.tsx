@@ -1,6 +1,7 @@
 import { NotificationSettingsPanel } from "@/components/notification-settings-panel";
 import { OrgProfilePanel } from "@/components/org-profile-panel";
 import { PageHeader } from "@/components/page-header";
+import { SettingsSections } from "@/components/settings-sections";
 import { ThemeSettings } from "@/components/theme-settings";
 import { TeamMappingsPanel } from "@/components/team-mappings";
 import { WinDefinitionPanel } from "@/components/win-definition-panel";
@@ -17,7 +18,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
+  const { section } = await searchParams;
   const live = hasLiveApi();
   const [mappings, winSettings, orgProfile, apiKeyMeta, notifSettings] = live
     ? await Promise.all([
@@ -47,21 +53,33 @@ export default async function SettingsPage() {
       ];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader title="Settings">
-        Profile, win rules, team tags, and optional sync key
+        Profile, alerts, team tags, win rules, and sync key
       </PageHeader>
-      <ThemeSettings />
-      <AgentApiKeyCard
-        initialPrefix={apiKeyMeta.primaryKeyPrefix}
-        initialName={apiKeyMeta.primaryKeyName}
-        initialError={apiKeyMeta.error}
+
+      <SettingsSections
+        defaultSection={section}
+        general={
+          <>
+            <ThemeSettings />
+            <OrgProfilePanel initial={orgProfile} />
+          </>
+        }
+        notifications={<NotificationSettingsPanel initial={notifSettings} />}
+        teams={<TeamMappingsPanel initialMappings={mappings} />}
+        wins={<WinDefinitionPanel initial={winSettings} />}
+        developer={
+          <>
+            <AgentApiKeyCard
+              initialPrefix={apiKeyMeta.primaryKeyPrefix}
+              initialName={apiKeyMeta.primaryKeyName}
+              initialError={apiKeyMeta.error}
+            />
+            <SyncAllButton />
+          </>
+        }
       />
-      <NotificationSettingsPanel initial={notifSettings} />
-      <OrgProfilePanel initial={orgProfile} />
-      <WinDefinitionPanel initial={winSettings} />
-      <TeamMappingsPanel initialMappings={mappings} />
-      <SyncAllButton />
     </div>
   );
 }

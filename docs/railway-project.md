@@ -45,8 +45,10 @@ Root Directory: **`admin`**.
 
 | Variable | Value |
 |----------|--------|
-| `NEXT_PUBLIC_ADMIN_API_URL` | `https://outcome-ledger-production.up.railway.app` |
-| `NEXT_PUBLIC_ADMIN_TOKEN` | same value as API `ADMIN_TOKEN` |
+| `ADMIN_API_URL` | `https://outcome-ledger-production.up.railway.app` |
+| `ADMIN_TOKEN` | same value as API `ADMIN_TOKEN` |
+
+(Server-side vars — do not use `NEXT_PUBLIC_*`; the admin app proxies via `/api/admin/*`.)
 
 ### Landing service (`outcome-ledger-landing`)
 

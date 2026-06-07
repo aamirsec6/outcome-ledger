@@ -5,6 +5,7 @@ import { MarketingBackground } from "@/components/marketing/marketing-background
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { HeroResend } from "@/components/marketing/hero-resend";
 import { ValueLayerSection } from "@/components/marketing/value-layer-section";
+import { ValueProofSection } from "@/components/marketing/value-proof-section";
 import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
 import { AudienceSection } from "@/components/marketing/audience-section";
 import { ControlSection } from "@/components/marketing/control-section";
@@ -22,6 +23,7 @@ export function OutcomeLanding() {
       <MarketingBackground />
       <MarketingNav spotsRemaining={spotsRemaining} />
       <HeroResend />
+      <ValueProofSection />
       <ValueLayerSection />
       <HowItWorksSection />
       <AudienceSection />

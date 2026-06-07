@@ -130,27 +130,39 @@ export const PERF_METRICS = [
 
 export const FAQ_ITEMS = [
   {
-    q: "What is cost per win?",
-    a: "Total AI spend, including failed attempts and retries, divided by wins that actually stuck. Think of a merged pull request that was not rolled back within a week. We also call this CPST (cost per successful task).",
+    q: "What exactly is 'cost per win'?",
+    a: "Total AI spend (including failed runs and retries) divided by the number of wins that actually stuck. A 'win' is typically a merged pull request that wasn't rolled back within 7 days. We also call this CPST — cost per successful task. Example: $201K spent, 209 stable wins = $962 per win.",
   },
   {
-    q: "How is this different from a token dashboard?",
-    a: "Token dashboards tell you how much you used. Outcome Ledger tells you what you got for it: real shipped work tied to real dollars. It is the layer between your AI bills and your customer wins.",
+    q: "How is this different from a token dashboard like Langfuse?",
+    a: "Token dashboards tell you how much AI you used. Outcome Ledger tells you what you got for it — real shipped work tied to real dollars. Langfuse shows traces and costs. We show cost per accepted outcome. They're complementary; we even pull data from Langfuse.",
   },
   {
-    q: "Do I need to be technical to use it?",
-    a: "Setup needs someone who can connect API keys and GitHub, about 15 minutes. After that, the dashboard is built for leadership: cost per win, trends, and board ready exports in plain language.",
+    q: "What if my team doesn't use PRs? We commit directly to main.",
+    a: "We support both workflows. You can define a win as a default-branch commit (no PR needed) or as a merged PR. The outcome contract lets you choose what counts for your org.",
+  },
+  {
+    q: "Do engineers need to change how they work?",
+    a: "No. We pull from your existing tools — OpenAI/Anthropic APIs, GitHub, Cursor exports. No IDE plugin, no proxy, no code changes. Engineers keep working exactly as before.",
+  },
+  {
+    q: "How long does it take to set up?",
+    a: "Most teams are live within a day. Connect your AI vendor keys (5 min), connect GitHub (5 min), define what counts as a win (5 min), and hit sync. First cost per win number appears immediately.",
+  },
+  {
+    q: "Is the math trustworthy? How does the board know it's not made up?",
+    a: "Every metric uses a fixed, published formula. The outcome contract (signed by your CFO) defines what counts as a win. Every sync is logged. Every number traces back to a vendor bill and a GitHub event. The PDF export includes the full methodology appendix.",
   },
   {
     q: "What tools does it connect to?",
-    a: "OpenAI, Anthropic, Cursor billing exports, CSV uploads, GitHub, and optionally Langfuse for trace metadata. More connectors are on the roadmap.",
+    a: "OpenAI, Anthropic, Cursor billing exports, CSV uploads, GitHub (OAuth or GitHub App), and optionally Langfuse for trace metadata. More connectors are on the roadmap.",
   },
   {
-    q: "Are the numbers made up by AI?",
-    a: "No. All metrics are calculated with fixed formulas from your data. AI is only used optionally to draft executive summary text. You approve before anything is exported.",
+    q: "How much does it cost?",
+    a: "Free for teams under 50 engineers. Paid plans start at $5K/month for larger teams. Most customers see the tool pay for itself within the first month by identifying wasted AI spend or defending budget renewals.",
   },
   {
-    q: "How do I get started?",
-    a: "Join the waitlist below. We onboard design partners who feel the gap between AI spend and customer value first. Most teams are live within a day of connecting vendors and GitHub.",
+    q: "Can I try it before committing?",
+    a: "Yes. Join the waitlist and we'll set you up with a free workspace. Connect your data, see your first cost per win number, and decide if it's useful. No credit card required.",
   },
 ] as const;

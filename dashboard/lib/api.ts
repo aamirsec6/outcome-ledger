@@ -347,10 +347,20 @@ export type BenchmarkReport = {
   };
 };
 
+export type AiAdoptionDiagnostic = {
+  id: string;
+  severity: "info" | "warning";
+  title: string;
+  body: string;
+  actionLabel?: string;
+  actionHref?: string;
+};
+
 export type AiAdoptionReport = {
   periodLabel: string;
   method: string;
   methodNote: string;
+  diagnostics?: AiAdoptionDiagnostic[];
   shippedWork: {
     stableOutcomes: number;
     outcomesPerWeek: number;

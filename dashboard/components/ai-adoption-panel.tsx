@@ -1,5 +1,6 @@
 import { pct, usd } from "@/lib/format";
 import type { AiAdoptionReport } from "@/lib/api";
+import { AiAdoptionHints } from "@/components/ai-adoption-hints";
 
 type Props = {
   report: AiAdoptionReport | null;
@@ -23,9 +24,13 @@ export function AiAdoptionPanel({ report }: Props) {
           AI adoption &amp; output
         </h2>
         <p className="mt-1 text-xs theme-text-muted">
-          How much you shipped, which AI tools are in use, and estimated AI-assisted wins.
+          Shipped wins from GitHub; AI metrics need spend + team tags (or Cursor Team API).
         </p>
       </div>
+
+      {report.diagnostics?.length ? (
+        <AiAdoptionHints hints={report.diagnostics} />
+      ) : null}
 
       {report.codeAttribution?.available ? (
         (() => {
@@ -89,6 +94,11 @@ export function AiAdoptionPanel({ report }: Props) {
           </p>
           <p className="text-xs theme-text-muted">
             {split.aiAssistedOutcomes} of {shipped.stableOutcomes} wins
+            {split.aiAssistedPct === 0 && shipped.stableOutcomes > 0 ? (
+              <span className="block text-[10px] theme-text-dim">
+                Needs matching team or billed user on spend
+              </span>
+            ) : null}
           </p>
         </div>
         <div className="rounded-lg border border-[var(--border)] p-3">
@@ -99,6 +109,9 @@ export function AiAdoptionPanel({ report }: Props) {
           <p className="text-xs theme-text-muted">
             {summary.activeAiUsers} billed user
             {summary.activeAiUsers === 1 ? "" : "s"}
+            {summary.activeAiUsers === 0 && summary.totalSpendUsd > 0 ? (
+              <span className="block text-[10px] theme-text-dim">CSV totals only</span>
+            ) : null}
           </p>
         </div>
       </div>

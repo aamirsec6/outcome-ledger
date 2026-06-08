@@ -10,7 +10,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.metrics import _stable_outcome_filter
-from app.models import OutcomeEvent, UsageEvent
+from app.models import CommitAiMetrics, OutcomeEvent, UsageEvent
+from app.org_credentials import vendor_configured_for_org
 from app.pr_code_attribution import code_attribution_summary
 from app.revert_check import stable_days
 
@@ -62,6 +63,127 @@ def _author_ai_assisted(author: str | None, ai_keys: set[str]) -> bool:
         if compact and (key in compact or compact in key):
             return True
     return False
+
+
+def _build_adoption_diagnostics(
+    *,
+    total_spend: float,
+    stable_total: int,
+    ai_assisted: int,
+    ai_assisted_pct: float,
+    distinct_ai_users: int,
+    team_outcomes: dict[str, int],
+    team_spend: dict[str, float],
+    code_attribution: dict,
+    cursor_api_configured: bool,
+) -> list[dict]:
+    """Plain-language hints when AI metrics look empty or misleading."""
+    hints: list[dict] = []
+
+    if stable_total == 0:
+        hints.append(
+            {
+                "id": "no_wins",
+                "severity": "info",
+                "title": "No shipped wins yet",
+                "body": "Connect GitHub and run Sync so merged PRs show up here.",
+                "actionLabel": "Connect GitHub",
+                "actionHref": "/integrations",
+            }
+        )
+
+    if total_spend <= 0:
+        hints.append(
+            {
+                "id": "no_spend",
+                "severity": "info",
+                "title": "No AI spend ingested",
+                "body": "Upload Cursor billing or connect spend via MCP, then Sync.",
+                "actionLabel": "Add AI spend",
+                "actionHref": "/integrations",
+            }
+        )
+
+    win_teams = {
+        tid for tid, count in team_outcomes.items() if count > 0 and tid != "unassigned"
+    }
+    spend_teams = {
+        tid for tid, spend in team_spend.items() if spend > 0 and tid != "unassigned"
+    }
+    if (
+        stable_total > 0
+        and total_spend > 0
+        and ai_assisted_pct == 0
+        and win_teams
+        and spend_teams
+        and not (win_teams & spend_teams)
+    ):
+        win_label = ", ".join(sorted(win_teams)[:3])
+        spend_label = ", ".join(sorted(spend_teams)[:3])
+        hints.append(
+            {
+                "id": "team_mismatch",
+                "severity": "warning",
+                "title": "Wins and spend are on different teams",
+                "body": (
+                    f"Wins roll up to {win_label} but spend is tagged to {spend_label}. "
+                    "AI-assisted wins need the same team on repos and bills."
+                ),
+                "actionLabel": "Fix team tags",
+                "actionHref": "/settings?section=teams",
+            }
+        )
+
+    if total_spend > 0 and distinct_ai_users == 0:
+        hints.append(
+            {
+                "id": "no_billed_users",
+                "severity": "info",
+                "title": "Spend has no per-user breakdown",
+                "body": (
+                    "Your Cursor upload is org-level totals only. "
+                    "We cannot match PR authors to billed users until CSV rows include user/email "
+                    "or you connect Cursor Team API."
+                ),
+                "actionLabel": "Connect Cursor API",
+                "actionHref": "/integrations",
+            }
+        )
+
+    if not cursor_api_configured and total_spend > 0:
+        hints.append(
+            {
+                "id": "no_cursor_api",
+                "severity": "info",
+                "title": "Exact AI line counts need Cursor Team API",
+                "body": (
+                    "Without the Admin API, AI vs human code is guessed from git trailers "
+                    "and spend timing — often 0% AI until you connect."
+                ),
+                "actionLabel": "Set up Cursor API",
+                "actionHref": "/integrations",
+            }
+        )
+
+    if code_attribution.get("available") and (code_attribution.get("aiPct") or 0) == 0:
+        methods = code_attribution.get("byMethod") or {}
+        team_mismatch = any(h["id"] == "team_mismatch" for h in hints)
+        if not methods.get("cursor_api") and not team_mismatch:
+            hints.append(
+                {
+                    "id": "zero_ai_lines",
+                    "severity": "warning",
+                    "title": "0% AI code lines detected",
+                    "body": (
+                        "Commits lack Co-authored-by / Cursor trailers and spend is not tied "
+                        "to each PR. Connect Cursor Team API or tag repos to the same team as spend."
+                    ),
+                    "actionLabel": "Improve attribution",
+                    "actionHref": "/integrations",
+                }
+            )
+
+    return hints
 
 
 def build_ai_adoption_report(db: Session, org_id: str, *, lookback_days: int = 90) -> dict:
@@ -184,13 +306,31 @@ def build_ai_adoption_report(db: Session, org_id: str, *, lookback_days: int = 9
     distinct_ai_users = len({u.user_id for u in usage_rows if u.user_id})
     distinct_authors = len({_outcome_author(o) for o in outcomes if _outcome_author(o)})
 
+    code_attribution = code_attribution_summary(db, org_id, lookback_days=lookback_days)
+    cursor_api = vendor_configured_for_org(db, org_id, "cursor") or (
+        db.query(CommitAiMetrics.id).filter(CommitAiMetrics.org_id == org_id).first()
+        is not None
+    )
+    diagnostics = _build_adoption_diagnostics(
+        total_spend=total_spend,
+        stable_total=stable_total,
+        ai_assisted=ai_assisted,
+        ai_assisted_pct=ai_assisted_pct,
+        distinct_ai_users=distinct_ai_users,
+        team_outcomes=dict(team_outcomes),
+        team_spend=dict(team_spend),
+        code_attribution=code_attribution,
+        cursor_api_configured=bool(cursor_api),
+    )
+
     return {
         "periodLabel": f"Last {lookback_days} days",
         "method": "proxy_v1",
         "methodNote": (
-            "AI-assisted wins are estimated from AI tool spend + GitHub author/team overlap. "
-            "Not PR-level code attribution (Weave-style) until Cursor AI Code Tracking or Langfuse is connected."
+            "Shipped wins come from GitHub. AI-assisted % links spend to PR teams or authors. "
+            "Line-level AI % needs Cursor Team API for accuracy."
         ),
+        "diagnostics": diagnostics,
         "shippedWork": {
             "stableOutcomes": stable_total,
             "outcomesPerWeek": round(stable_total / max(lookback_days / 7, 1), 1),
@@ -216,5 +356,5 @@ def build_ai_adoption_report(db: Session, org_id: str, *, lookback_days: int = 9
             else (100.0 if distinct_ai_users else 0.0),
         },
         "byTeam": teams,
-        "codeAttribution": code_attribution_summary(db, org_id, lookback_days=lookback_days),
+        "codeAttribution": code_attribution,
     }
